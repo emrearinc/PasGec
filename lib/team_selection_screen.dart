@@ -6,13 +6,17 @@ class TeamSelectionScreen extends StatefulWidget {
   final int gameTime;
   final int passLimit;
   final int tabooPenalty; // Yeni eklenen parametre
+  final bool showJokers;
+  final double jokerProbability;
+
 
   const TeamSelectionScreen({super.key,
     required this.gameScore,
     required this.gameTime,
     required this.passLimit,
     required this.tabooPenalty, // Parametre olarak ekledik
-
+    required this.showJokers,
+    required this.jokerProbability,
   });
 
   @override
@@ -55,6 +59,8 @@ class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
             gameScore: widget.gameScore,
             passLimit: widget.passLimit,
             tabooPenalty: widget.tabooPenalty, // Doğru parametre geçişi
+            showJokers: widget.showJokers,
+            jokerProbability: widget.jokerProbability,
 
           ),
         ),

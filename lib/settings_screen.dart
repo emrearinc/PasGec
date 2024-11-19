@@ -12,6 +12,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _gameTime = 60;  // Varsayılan oyun zamanı (saniye)
   int _passLimit = 3;  // Varsayılan pas hakkı
   int _tabooPenalty = 1; // Varsayılan Tabu cezası puanı
+  bool _showJokers = true; // Varsayılan olarak jokerler gösterilsin
+  double _jokerProbability = 0.3; // Varsayılan gösterim ihtimali %30
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +109,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   label: 'Seçilen Tabu Cezası: $_tabooPenalty puan',
                 ),
+                const SizedBox(height: 10),
+                _buildSectionTitle('Joker Ayarları'),
+                _buildCustomCard(
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Jokerler Gösterilsin', style: TextStyle(fontSize: 16)),
+                          Switch(
+                            value: _showJokers,
+                            onChanged: (bool value) {
+                              setState(() {
+                                _showJokers = value;
+                              });
+                            },
+                            activeColor: Colors.deepPurple,
+                          ),
+                        ],
+                      ),
+                      if (_showJokers) ...[
+                        const SizedBox(height: 10),
+                        Slider(
+                          value: _jokerProbability,
+                          min: 0,
+                          max: 1,
+                          divisions: 10,
+                          label: '${(_jokerProbability * 100).toInt()}%',
+                          activeColor: Colors.deepPurple,
+                          onChanged: (double value) {
+                            setState(() {
+                              _jokerProbability = value;
+                            });
+                          },
+                        ),
+                        Text(
+                          'Gösterim İhtimali: ${(_jokerProbability * 100).toInt()}%',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ],
+                    ],
+                  ),
+                  label: 'Joker Gösterim Ayarları',
+                ),
+
                 const SizedBox(height: 30),
                 Center(
                   child: ElevatedButton(
@@ -117,6 +164,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         'gameTime': _gameTime,
                         'passLimit': _passLimit,
                         'tabooPenalty': _tabooPenalty,
+                        'showJokers': _showJokers,
+                        'jokerProbability': _jokerProbability,
                       });
                     },
                     style: ElevatedButton.styleFrom(
@@ -144,6 +193,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                 ),
+
               ],
             ),
           ),

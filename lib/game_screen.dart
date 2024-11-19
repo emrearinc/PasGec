@@ -22,6 +22,8 @@ class GameScreen extends StatefulWidget {
   final int gameScore;
   final int passLimit;
   final int tabooPenalty; // Tabu cezasını ekledik
+  final bool showJokers;
+  final double jokerProbability;
 
   const GameScreen({
     super.key,
@@ -31,6 +33,8 @@ class GameScreen extends StatefulWidget {
     required this.gameScore,
     required this.passLimit, // Yapıcıya (constructor) ekledik
     required this.tabooPenalty, // Parametre olarak yapıcıya ekledik
+    required this.showJokers,
+    required this.jokerProbability,
 
   });
 
@@ -293,9 +297,12 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   bool shouldShowJoker() {
+    if (!widget.showJokers) return false; // Bu kontrol zaten `showJokerMessage` içinde yapılıyor.
     Random random = Random();
-    return random.nextDouble() < 0.3;
+    return random.nextDouble() < widget.jokerProbability;
   }
+
+
 
   // Jokerleri sıfırlar ve kullanılabilir joker listesine atar
   void _resetJokers() {
@@ -304,12 +311,19 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void showJokerMessage() {
-    String? jokerMessage = Joker.getRandomJoker(probability: 0.9); // %90 ihtimalle joker
+    // Joker gösterim seçeneğini kontrol et
+    if (!widget.showJokers) return; // Joker gösterimi kapalıysa çık
+
+    // Joker gösterim ihtimaline göre kontrol et
+    Random random = Random();
+    if (random.nextDouble() >= widget.jokerProbability) return; // Joker gösterilmeyecekse çık
+
+    // Joker mesajını getir
+    String? jokerMessage = Joker.getRandomJoker(probability: widget.jokerProbability);
     if (jokerMessage != null) {
       pauseTimer();
 
       // Rastgele animasyon, ikon ve diyalog tipi seçimi
-      final random = Random();
       final List<AnimType> animations = [
         AnimType.scale,
         AnimType.leftSlide,
@@ -330,6 +344,7 @@ class _GameScreenState extends State<GameScreen> {
       final DialogType selectedDialog = dialogTypes[random.nextInt(dialogTypes.length)];
       final IconData selectedIcon = icons[random.nextInt(icons.length)];
 
+      // Joker mesajını göster
       AwesomeDialog(
         context: context,
         dialogType: selectedDialog,
@@ -340,7 +355,7 @@ class _GameScreenState extends State<GameScreen> {
           size: 50,
         ),
         title: 'Joker!',
-        desc: jokerMessage, // Sadece bir mesaj gösterilir
+        desc: jokerMessage, // Joker mesajını ekle
         btnOkText: 'Devam Et',
         btnOkOnPress: () {
           resumeTimer();
@@ -348,6 +363,7 @@ class _GameScreenState extends State<GameScreen> {
       ).show();
     }
   }
+
 
   // Oyun sıfırlandığında jokerleri de sıfırla
   void resetGame() {

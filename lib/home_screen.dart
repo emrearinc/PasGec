@@ -15,6 +15,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int _gameTime = 60;
   int _passLimit = 3;
   int _tabooPenalty = 1; // Varsayılan tabu cezası
+  bool _showJokers = true; // Varsayılan joker gösterimi
+  double _jokerProbability = 0.3; // Varsayılan joker gösterim ihtimali
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +53,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         gameTime: _gameTime,
                         passLimit: _passLimit,
                         tabooPenalty: _tabooPenalty, // Tabu cezasını ekledik
+                        showJokers: _showJokers,
+                        jokerProbability: _jokerProbability,
+
                       ),
                     ),
                   );
@@ -72,6 +77,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       _gameTime = result['gameTime'];
                       _passLimit = result['passLimit'];
                       _tabooPenalty = result['tabooPenalty']; // Tabu cezasını aldık
+                      _showJokers = result['showJokers'];
+                      _jokerProbability = result['jokerProbability'];
 
                     });
                   }

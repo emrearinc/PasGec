@@ -14,6 +14,7 @@ class NextTeamScreen extends StatelessWidget {
     required this.correctCount,
     required this.tabooCount,
     required this.passCount,
+
   });
 
   @override
