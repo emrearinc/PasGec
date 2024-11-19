@@ -15,8 +15,9 @@ dependencies:
   simple_animations: ^5.0.2
   sqflite: ^2.0.0+3
   path: ^1.8.0
-  vibration: ^1.7.3
-  audioplayers: ^5.0.0
+  vibration: ^2.0.1
+  audioplayers: ^6.1.0
+  shared_preferences: ^2.2.0 # Mevcut en son sürümü kullanın
 
 dev_dependencies:
   flutter_test:

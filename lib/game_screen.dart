@@ -13,6 +13,7 @@ import 'package:awesome_dialog/awesome_dialog.dart';
 import 'database_helper.dart';
 import 'package:vibration/vibration.dart';
 import 'package:audioplayers/audioplayers.dart';
+
 late AudioPlayer audioPlayer;
 
 class GameScreen extends StatefulWidget {
@@ -25,18 +26,19 @@ class GameScreen extends StatefulWidget {
   final bool showJokers;
   final double jokerProbability;
 
+
   const GameScreen({
     super.key,
     required this.team1Name,
     required this.team2Name,
     required this.gameTime,
     required this.gameScore,
-    required this.passLimit, // Yapıcıya (constructor) ekledik
-    required this.tabooPenalty, // Parametre olarak yapıcıya ekledik
+    required this.passLimit,
+    required this.tabooPenalty,
     required this.showJokers,
     required this.jokerProbability,
-
   });
+
 
   @override
   _GameScreenState createState() => _GameScreenState();
@@ -81,15 +83,16 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
-    timerValue = widget.gameTime;
-    currentPassCount = widget.passLimit;
+
+// timerValue ve currentPassCount'u doğrudan widget parametrelerinden al
+    timerValue = widget.gameTime; // gameTime doğrudan widget'ten alınıyor
+    currentPassCount = widget.passLimit; // passLimit doğrudan widget'ten alınıyor
     isPassButtonDisabled = currentPassCount == 0;
-    //addSampleWords();
+
     fetchWordsFromDatabase();
     startTimer();
-    _resetJokers(); // Oyun başladığında jokerleri sıfırla
-    audioPlayer = AudioPlayer(); // AudioPlayer'ı başlatıyoruz
-
+    _resetJokers();
+    audioPlayer = AudioPlayer(); // AudioPlayer'ı başlat
   }
 
   Future<void> fetchWordsFromDatabase() async {

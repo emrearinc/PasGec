@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'team_selection_screen.dart';
 import 'settings_screen.dart';
-import 'words_screen.dart'; // WordsScreen'i ekliyoruz
+import 'words_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,9 +15,27 @@ class _HomeScreenState extends State<HomeScreen> {
   int _gameScore = 25;
   int _gameTime = 60;
   int _passLimit = 3;
-  int _tabooPenalty = 1; // Varsayılan tabu cezası
-  bool _showJokers = true; // Varsayılan joker gösterimi
-  double _jokerProbability = 0.3; // Varsayılan joker gösterim ihtimali
+  int _tabooPenalty = 1;
+  bool _showJokers = true;
+  double _jokerProbability = 0.3;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _gameScore = prefs.getInt('gameScore') ?? 25;
+      _gameTime = prefs.getInt('gameTime') ?? 60;
+      _passLimit = prefs.getInt('passLimit') ?? 3;
+      _tabooPenalty = prefs.getInt('tabooPenalty') ?? 1;
+      _showJokers = prefs.getBool('showJokers') ?? true;
+      _jokerProbability = prefs.getDouble('jokerProbability') ?? 0.3;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,10 +71,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         gameScore: _gameScore,
                         gameTime: _gameTime,
                         passLimit: _passLimit,
-                        tabooPenalty: _tabooPenalty, // Tabu cezasını ekledik
+                        tabooPenalty: _tabooPenalty,
                         showJokers: _showJokers,
                         jokerProbability: _jokerProbability,
-
                       ),
                     ),
                   );
@@ -70,17 +88,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     context,
                     MaterialPageRoute(builder: (context) => const SettingsScreen()),
                   );
-
                   if (result != null) {
-                    setState(() {
-                      _gameScore = result['gameScore'];
-                      _gameTime = result['gameTime'];
-                      _passLimit = result['passLimit'];
-                      _tabooPenalty = result['tabooPenalty']; // Tabu cezasını aldık
-                      _showJokers = result['showJokers'];
-                      _jokerProbability = result['jokerProbability'];
-
-                    });
+                    _loadSettings(); // Ayarları yeniden yükle
                   }
                 },
               ),
@@ -91,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => WordsScreen()),
+                    MaterialPageRoute(builder: (context) => const WordsScreen()),
                   );
                 },
               ),

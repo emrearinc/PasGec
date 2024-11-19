@@ -5,16 +5,16 @@ class TeamSelectionScreen extends StatefulWidget {
   final int gameScore;
   final int gameTime;
   final int passLimit;
-  final int tabooPenalty; // Yeni eklenen parametre
+  final int tabooPenalty;
   final bool showJokers;
   final double jokerProbability;
 
-
-  const TeamSelectionScreen({super.key,
+  const TeamSelectionScreen({
+    super.key,
     required this.gameScore,
     required this.gameTime,
     required this.passLimit,
-    required this.tabooPenalty, // Parametre olarak ekledik
+    required this.tabooPenalty,
     required this.showJokers,
     required this.jokerProbability,
   });
@@ -26,8 +26,10 @@ class TeamSelectionScreen extends StatefulWidget {
 class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
   final _team1Controller = TextEditingController();
   final _team2Controller = TextEditingController();
-  final List<TextEditingController> _team1PlayersControllers = List.generate(4, (_) => TextEditingController());
-  final List<TextEditingController> _team2PlayersControllers = List.generate(4, (_) => TextEditingController());
+  final List<TextEditingController> _team1PlayersControllers =
+  List.generate(4, (_) => TextEditingController());
+  final List<TextEditingController> _team2PlayersControllers =
+  List.generate(4, (_) => TextEditingController());
 
   @override
   void dispose() {
@@ -43,12 +45,15 @@ class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
   }
 
   void startGame() {
-    String team1Name = _team1Controller.text;
-    String team2Name = _team2Controller.text;
-    String team1Player1 = _team1PlayersControllers[0].text;
-    String team2Player1 = _team2PlayersControllers[0].text;
+    String team1Name = _team1Controller.text.trim();
+    String team2Name = _team2Controller.text.trim();
+    String team1Player1 = _team1PlayersControllers[0].text.trim();
+    String team2Player1 = _team2PlayersControllers[0].text.trim();
 
-    if (team1Name.isNotEmpty && team2Name.isNotEmpty && team1Player1.isNotEmpty && team2Player1.isNotEmpty) {
+    if (team1Name.isNotEmpty &&
+        team2Name.isNotEmpty &&
+        team1Player1.isNotEmpty &&
+        team2Player1.isNotEmpty) {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -58,10 +63,9 @@ class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
             gameTime: widget.gameTime,
             gameScore: widget.gameScore,
             passLimit: widget.passLimit,
-            tabooPenalty: widget.tabooPenalty, // Doğru parametre geçişi
+            tabooPenalty: widget.tabooPenalty,
             showJokers: widget.showJokers,
             jokerProbability: widget.jokerProbability,
-
           ),
         ),
       );
@@ -77,26 +81,30 @@ class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Takım Seçimi'),
+        backgroundColor: Colors.deepPurple,
+      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.blueAccent],
+            colors: [Colors.deepPurple, Colors.pinkAccent],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
                 const Center(
                   child: Text(
-                    'Takım Seçimi',
+                    'Takım ve Oyuncu Bilgileri',
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       shadows: [
@@ -109,13 +117,11 @@ class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 20),
+                _buildTeamCard('1. Takım', _team1Controller, _team1PlayersControllers),
+                const SizedBox(height: 20),
+                _buildTeamCard('2. Takım', _team2Controller, _team2PlayersControllers),
                 const SizedBox(height: 30),
-                _buildTeamNameInput('1. Takım Adı', _team1Controller),
-                ..._buildPlayerInputs('1. Takım - ', _team1PlayersControllers),
-                const SizedBox(height: 30),
-                _buildTeamNameInput('2. Takım Adı', _team2Controller),
-                ..._buildPlayerInputs('2. Takım - ', _team2PlayersControllers),
-                const SizedBox(height: 40),
                 Center(
                   child: ElevatedButton.icon(
                     onPressed: startGame,
@@ -131,11 +137,10 @@ class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
-                      elevation: 8,
+                      elevation: 10,
                     ),
                   ),
                 ),
-                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -144,42 +149,66 @@ class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
     );
   }
 
-  Widget _buildTeamNameInput(String label, TextEditingController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: TextField(
-        controller: controller,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 20,
+  Widget _buildTeamCard(
+      String title, TextEditingController teamController, List<TextEditingController> playerControllers) {
+    return Card(
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shadowColor: Colors.black38,
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple.shade100, Colors.white],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
         ),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-          floatingLabelBehavior: FloatingLabelBehavior.always,
-          floatingLabelStyle: const TextStyle(
-            fontSize: 14,
-            color: Colors.white,
-          ),
-          filled: true,
-          fillColor: Colors.deepPurple.withOpacity(0.3),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(25),
-            borderSide: const BorderSide(color: Colors.white, width: 2),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(25),
-            borderSide: const BorderSide(color: Colors.white70, width: 2),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(25),
-            borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _buildTeamNameInput('Takım Adı', teamController),
+            const SizedBox(height: 10),
+            ..._buildPlayerInputs('Oyuncu ', playerControllers),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTeamNameInput(String label, TextEditingController controller) {
+    return TextField(
+      controller: controller,
+      style: const TextStyle(
+        color: Colors.deepPurple,
+        fontWeight: FontWeight.bold,
+        fontSize: 18,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(
+          color: Colors.deepPurple,
+          fontWeight: FontWeight.bold,
+        ),
+        filled: true,
+        fillColor: Colors.deepPurple.shade50,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: Colors.deepPurple),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: Colors.deepPurpleAccent, width: 2),
         ),
       ),
     );
@@ -187,19 +216,18 @@ class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
 
   Widget _buildPlayerInput(String label, TextEditingController controller) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: TextField(
         controller: controller,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.deepPurple),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.white70),
-          floatingLabelStyle: const TextStyle(fontSize: 14, color: Colors.white),
+          labelStyle: const TextStyle(color: Colors.deepPurple),
           filled: true,
-          fillColor: Colors.white.withOpacity(0.2),
+          fillColor: Colors.deepPurple.shade50,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
-            borderSide: BorderSide.none,
+            borderSide: const BorderSide(color: Colors.deepPurple),
           ),
         ),
       ),
@@ -210,7 +238,7 @@ class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
     return controllers
         .asMap()
         .entries
-        .map((entry) => _buildPlayerInput('$labelPrefix${entry.key + 1}. Oyuncu', entry.value))
+        .map((entry) => _buildPlayerInput('$labelPrefix ${entry.key + 1}', entry.value))
         .toList();
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -8,12 +9,46 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  int _gameScore = 25; // Varsayılan oyun skoru
-  int _gameTime = 60;  // Varsayılan oyun zamanı (saniye)
-  int _passLimit = 3;  // Varsayılan pas hakkı
-  int _tabooPenalty = 1; // Varsayılan Tabu cezası puanı
-  bool _showJokers = true; // Varsayılan olarak jokerler gösterilsin
-  double _jokerProbability = 0.3; // Varsayılan gösterim ihtimali %30
+  int _gameScore = 25;
+  int _gameTime = 60;
+  int _passLimit = 3;
+  int _tabooPenalty = 1;
+  bool _showJokers = true;
+  double _jokerProbability = 0.3;
+
+  bool _isInitialized = false; // İlk yükleme kontrolü
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings(); // Ayarları yükle
+  }
+
+  /// Ayarları SharedPreferences'dan yükleme
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      _gameScore = prefs.getInt('gameScore') ?? _gameScore;
+      _gameTime = prefs.getInt('gameTime') ?? _gameTime;
+      _passLimit = prefs.getInt('passLimit') ?? _passLimit;
+      _tabooPenalty = prefs.getInt('tabooPenalty') ?? _tabooPenalty;
+      _showJokers = prefs.getBool('showJokers') ?? _showJokers;
+      _jokerProbability = prefs.getDouble('jokerProbability') ?? _jokerProbability;
+      _isInitialized = true; // İlk yükleme tamamlandı
+    });
+  }
+
+  /// Ayarları SharedPreferences'a kaydetme
+  Future<void> _saveSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('gameScore', _gameScore);
+    await prefs.setInt('gameTime', _gameTime);
+    await prefs.setInt('passLimit', _passLimit);
+    await prefs.setInt('tabooPenalty', _tabooPenalty);
+    await prefs.setBool('showJokers', _showJokers);
+    await prefs.setDouble('jokerProbability', _jokerProbability);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +67,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           backgroundColor: Colors.deepPurple,
           foregroundColor: Colors.white,
         ),
-        body: SingleChildScrollView(
+        body: _isInitialized
+            ? SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -153,20 +189,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   label: 'Joker Gösterim Ayarları',
                 ),
-
                 const SizedBox(height: 30),
                 Center(
                   child: ElevatedButton(
-                    onPressed: () {
-                      // Seçilen ayarlarla geri dön
-                      Navigator.of(context).pop({
-                        'gameScore': _gameScore,
-                        'gameTime': _gameTime,
-                        'passLimit': _passLimit,
-                        'tabooPenalty': _tabooPenalty,
-                        'showJokers': _showJokers,
-                        'jokerProbability': _jokerProbability,
-                      });
+                    onPressed: () async {
+                      await _saveSettings(); // Ayarları kaydet
+                      Navigator.pop(context, true); // Ana ekrana dön ve başarı bilgisi gönder
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
@@ -188,16 +216,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         Icon(Icons.save, size: 20),
                         SizedBox(width: 8),
-                        Text('Ayarları Kaydet'),
+                        Text('Ayarları Kaydet ve Çık'),
                       ],
                     ),
                   ),
                 ),
-
               ],
             ),
           ),
-        ),
+        )
+            : const Center(child: CircularProgressIndicator()),
       ),
     );
   }
