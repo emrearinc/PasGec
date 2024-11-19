@@ -11,6 +11,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _gameScore = 25; // Varsayılan oyun skoru
   int _gameTime = 60;  // Varsayılan oyun zamanı (saniye)
   int _passLimit = 3;  // Varsayılan pas hakkı
+  int _tabooPenalty = 1; // Varsayılan Tabu cezası puanı
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +24,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
       child: Scaffold(
-        backgroundColor: Colors.transparent, // Scaffold arka planı şeffaf yapıldı
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: const Text('Ayarlar'),
           backgroundColor: Colors.deepPurple,
@@ -88,6 +89,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   label: 'Seçilen Pas Hakkı: $_passLimit',
                 ),
+                const SizedBox(height: 10),
+                _buildSectionTitle('Tabu Cezası Puanı'),
+                _buildCustomCard(
+                  child: Slider(
+                    value: _tabooPenalty.toDouble(),
+                    min: 0,
+                    max: 5,
+                    divisions: 5,
+                    label: _tabooPenalty.toString(),
+                    activeColor: Colors.deepPurple,
+                    onChanged: (double value) {
+                      setState(() {
+                        _tabooPenalty = value.toInt();
+                      });
+                    },
+                  ),
+                  label: 'Seçilen Tabu Cezası: $_tabooPenalty puan',
+                ),
                 const SizedBox(height: 30),
                 Center(
                   child: ElevatedButton(
@@ -97,6 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         'gameScore': _gameScore,
                         'gameTime': _gameTime,
                         'passLimit': _passLimit,
+                        'tabooPenalty': _tabooPenalty,
                       });
                     },
                     style: ElevatedButton.styleFrom(
