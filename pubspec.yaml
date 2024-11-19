@@ -1,0 +1,31 @@
+name: tabu_oyunu
+description: A new Flutter project.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  auto_size_text: ^3.0.0
+  awesome_dialog: ^3.2.1
+  simple_animations: ^5.0.2
+  sqflite: ^2.0.0+3
+  path: ^1.8.0
+  vibration: ^1.7.3
+  audioplayers: ^5.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/logo.png
+    - assets/database/words_database.db
+    - assets/sound/timer.MP3
