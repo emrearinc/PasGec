@@ -175,7 +175,7 @@ class _GameScreenState extends State<GameScreen> {
         team2Score--;
       }
 
-      // Titreşim eklemessss
+      // Titreşim eklemessssasas
       if (Vibration.hasVibrator() != null) {
         Vibration.vibrate(duration: 500); // 500ms titreşim
       }
