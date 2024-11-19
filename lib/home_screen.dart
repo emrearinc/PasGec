@@ -14,6 +14,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _gameScore = 25;
   int _gameTime = 60;
   int _passLimit = 3;
+  int _tabooPenalty = 1; // Varsayılan tabu cezası
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         gameScore: _gameScore,
                         gameTime: _gameTime,
                         passLimit: _passLimit,
+                        tabooPenalty: _tabooPenalty, // Tabu cezasını ekledik
                       ),
                     ),
                   );
@@ -69,6 +71,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       _gameScore = result['gameScore'];
                       _gameTime = result['gameTime'];
                       _passLimit = result['passLimit'];
+                      _tabooPenalty = result['tabooPenalty']; // Tabu cezasını aldık
+
                     });
                   }
                 },

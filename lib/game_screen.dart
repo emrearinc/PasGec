@@ -21,6 +21,7 @@ class GameScreen extends StatefulWidget {
   final int gameTime;
   final int gameScore;
   final int passLimit;
+  final int tabooPenalty; // Tabu cezasını ekledik
 
   const GameScreen({
     super.key,
@@ -29,6 +30,7 @@ class GameScreen extends StatefulWidget {
     required this.gameTime,
     required this.gameScore,
     required this.passLimit, // Yapıcıya (constructor) ekledik
+    required this.tabooPenalty, // Parametre olarak yapıcıya ekledik
 
   });
 
@@ -170,19 +172,20 @@ class _GameScreenState extends State<GameScreen> {
     setState(() {
       tabooCount++;
       if (currentTeam == 1) {
-        team1Score--;
+        team1Score -= widget.tabooPenalty; // Seçilen tabu cezası kadar puan düş
       } else {
-        team2Score--;
+        team2Score -= widget.tabooPenalty; // Seçilen tabu cezası kadar puan düş
       }
 
-      // Titreşim eklemessssasas
+      // Titreşim ekle
       if (Vibration.hasVibrator() != null) {
         Vibration.vibrate(duration: 500); // 500ms titreşim
       }
 
-      nextWord();
+      nextWord(); // Bir sonraki kelimeye geç
     });
   }
+
 
 
   void incrementPass() {
