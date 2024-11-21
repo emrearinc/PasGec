@@ -1,9 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:tabu_oyunu/database_helper.dart';
+import 'player_performance_screen.dart'; // Performans detayları için
 
-class ScoresScreen extends StatelessWidget {
-  final List<Map<String, dynamic>> scores;
+class ScoresScreen extends StatefulWidget {
+  const ScoresScreen({super.key});
 
-  const ScoresScreen({super.key, required this.scores});
+  @override
+  _ScoresScreenState createState() => _ScoresScreenState();
+}
+
+class _ScoresScreenState extends State<ScoresScreen> {
+  List<Map<String, dynamic>> scores = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchScores();
+  }
+
+  Future<void> fetchScores() async {
+    final db = DatabaseHelper();
+    final data = await db.getGameRecords(); // Veritabanından oyun kayıtlarını getir
+    setState(() {
+      scores = data;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +42,11 @@ class ScoresScreen extends StatelessWidget {
             end: Alignment.bottomRight,
           ),
         ),
-        child: ListView.builder(
+        child: scores.isEmpty
+            ? const Center(
+          child: CircularProgressIndicator(),
+        )
+            : ListView.builder(
           padding: const EdgeInsets.all(16.0),
           itemCount: scores.length,
           itemBuilder: (context, index) {
@@ -41,14 +66,27 @@ class ScoresScreen extends StatelessWidget {
                   ),
                 ),
                 title: Text(
-                  score['team'],
+                  '${score['team1_name']} vs ${score['team2_name']}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                subtitle: Text('Skor: ${score['score']}'),
-                trailing: const Icon(Icons.star, color: Colors.amber),
+                subtitle: Text(
+                    'Skor: ${score['team1_score']} - ${score['team2_score']}'),
+                trailing: const Icon(Icons.arrow_forward, color: Colors.white),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PlayerPerformanceScreen(
+                        gameId: score['id'],
+                        team1Name: score['team1_name'],
+                        team2Name: score['team2_name'],
+                      ),
+                    ),
+                  );
+                },
               ),
             );
           },

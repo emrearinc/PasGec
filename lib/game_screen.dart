@@ -4,7 +4,6 @@ import 'joker.dart'; // joker.dart dosyasını import ediyoruz
 import 'dart:math';
 import 'next_team_screen.dart'; // Yeni ekranı import edin
 import 'package:auto_size_text/auto_size_text.dart';
-import 'winner_screen.dart';
 import 'widgets/game_button_widget.dart';
 import 'widgets/score_card_widget.dart';
 import 'widgets/timer_widget.dart';
@@ -13,6 +12,8 @@ import 'package:awesome_dialog/awesome_dialog.dart';
 import 'database_helper.dart';
 import 'package:vibration/vibration.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:tabu_oyunu/models/player_performance.dart';
+import 'package:tabu_oyunu/winner_screen.dart';
 
 late AudioPlayer audioPlayer;
 
@@ -87,22 +88,50 @@ class _GameScreenState extends State<GameScreen> {
   int currentPlayerIndexTeam1 = 0;
   int currentPlayerIndexTeam2 = 0;
 
+  List<PlayerPerformance> team1Performances = [];
+  List<PlayerPerformance> team2Performances = [];
 
   @override
   void initState() {
     super.initState();
+
+    // Performans listelerini oluştur ve sıfır değerlerle başlat
+    team1Performances = widget.team1Players
+        .map((player) => PlayerPerformance(
+      playerName: player,
+      correctCount: 0,
+      tabooCount: 0,
+      passCount: 0,
+    ))
+        .toList();
+
+    team2Performances = widget.team2Players
+        .map((player) => PlayerPerformance(
+      playerName: player,
+      correctCount: 0,
+      tabooCount: 0,
+      passCount: 0,
+    ))
+        .toList();
 
     // Zamanlayıcı ve diğer başlangıç değerlerini ayarla
     timerValue = widget.gameTime;
     currentPassCount = widget.passLimit;
     isPassButtonDisabled = currentPassCount == 0;
 
-    // Veritabanından kelimeleri çek ve zamanlayıcıyı başlat
+    // Veritabanından kelimeleri yükle
     fetchWordsFromDatabase();
+
+    // Zamanlayıcıyı başlat
     startTimer();
+
+    // Jokerleri sıfırla
     _resetJokers();
-    audioPlayer = AudioPlayer(); // AudioPlayer başlat
+
+    // Ses oynatıcısını başlat
+    audioPlayer = AudioPlayer();
   }
+
 
   Future<void> fetchWordsFromDatabase() async {
     try {
@@ -181,8 +210,24 @@ class _GameScreenState extends State<GameScreen> {
       return widget.team1Players[nextIndex];
     }
   }
+  void updatePlayerPerformance(String playerName, {int correct = 0, int taboo = 0, int pass = 0}) {
+    setState(() {
+      List<PlayerPerformance> currentTeamPerformances = currentTeam == 1 ? team1Performances : team2Performances;
 
+      for (var performance in currentTeamPerformances) {
+        if (performance.playerName == playerName) {
+          performance.correctCount += correct;
+          performance.tabooCount += taboo;
+          performance.passCount += pass;
+          break;
+        }
+      }
+    });
 
+    // Güncellemeden sonra listeyi kontrol et
+    print("Updated Team 1 Performances: $team1Performances");
+    print("Updated Team 2 Performances: $team2Performances");
+  }
 
   void updatePlayerIndex() {
     setState(() {
@@ -209,6 +254,7 @@ class _GameScreenState extends State<GameScreen> {
 
 
   void incrementCorrect() {
+    updatePlayerPerformance(getCurrentPlayer(), correct: 1);
     setState(() {
       correctCount++;
       if (currentTeam == 1) {
@@ -222,6 +268,8 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void incrementTaboo() {
+    updatePlayerPerformance(getCurrentPlayer(), taboo: 1);
+
     setState(() {
       tabooCount++;
       if (currentTeam == 1) {
@@ -240,6 +288,8 @@ class _GameScreenState extends State<GameScreen> {
 
 
   void incrementPass() {
+    updatePlayerPerformance(getCurrentPlayer(), pass: 1);
+
     setState(() {
       if (currentPassCount > 0) {
         passCount++;
@@ -396,8 +446,8 @@ class _GameScreenState extends State<GameScreen> {
 
   // Jokerleri sıfırlar ve kullanılabilir joker listesine atar
   void _resetJokers() {
-    remainingJokers = List.from(Joker.jokerMessages);
-    usedJokers.clear();
+    if (!widget.showJokers || Random().nextDouble() >= widget.jokerProbability) return;
+
   }
 
   void showJokerMessage() {
@@ -455,7 +505,6 @@ class _GameScreenState extends State<GameScreen> {
   }
 
 
-  // Oyun sıfırlandığında jokerleri de sıfırla
   void resetGame() {
     setState(() {
       team1Score = 0;
@@ -470,6 +519,9 @@ class _GameScreenState extends State<GameScreen> {
       passCount = 0;
       isGameOver = false;
       _resetJokers(); // Jokerleri sıfırla
+
+      // Performansları sıfırla
+      resetPerformances();
     });
 
     timer?.cancel();
@@ -517,30 +569,60 @@ class _GameScreenState extends State<GameScreen> {
 
 
 
-    void checkWinCondition() {
-      if (team1Score >= widget.gameScore || team2Score >= widget.gameScore) {
-        String winningTeam = team1Score >= widget.gameScore ? widget.team1Name : widget.team2Name;
-        isGameOver = true;
-        timer?.cancel();
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => WinnerScreen(
-              winningTeam: winningTeam,
-              onPlayAgain: resetGame,
-              onSettings: () {
-                Navigator.pop(context);
-              },
-              onMainMenu: () {
-                Navigator.popUntil(context, (route) => route.isFirst);
-              },
-            ),
+  void checkWinCondition() {
+    if (team1Score >= widget.gameScore || team2Score >= widget.gameScore) {
+      String winningTeam = team1Score >= widget.gameScore ? widget.team1Name : widget.team2Name;
+      isGameOver = true;
+      timer?.cancel();
+      // Performans listelerini konsolda kontrol et
+      print("Team 1 Performances: $team1Performances");
+      print("Team 2 Performances: $team2Performances");
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => WinnerScreen(
+            winningTeam: winningTeam,
+            team1Name: widget.team1Name, // Takım 1 adı gönderiliyor
+            team2Name: widget.team2Name, // Takım 2 adı gönderiliyor
+            team1Performances: team1Performances,
+            team2Performances: team2Performances,
+
+            onPlayAgain: resetGame, // Yeniden oyun başlatma
+            onSettings: () {
+              Navigator.pop(context); // Ayarlar ekranına dönmek için
+            },
+            onMainMenu: () {
+              Navigator.popUntil(context, (route) => route.isFirst); // Ana menüye dönmek için
+            },
           ),
-        );
-      }
+        ),
+      );
     }
+  }
 
+  void resetPerformances() {
+    setState(() {
+      // Performans listelerini sıfırla
+      team1Performances = widget.team1Players
+          .map((player) => PlayerPerformance(
+        playerName: player,
+        correctCount: 0,
+        tabooCount: 0,
+        passCount: 0,
+      ))
+          .toList();
 
+      team2Performances = widget.team2Players
+          .map((player) => PlayerPerformance(
+        playerName: player,
+        correctCount: 0,
+        tabooCount: 0,
+        passCount: 0,
+      ))
+          .toList();
+    });
+  }
 
 
 
