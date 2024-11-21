@@ -78,6 +78,8 @@ class _GameScreenState extends State<GameScreen> {
   int passCount = 0;
   List<String> remainingJokers = []; // Kullanılabilir jokerlerin listesi
   Set<String> usedJokers = {}; // Kullanılmış jokerlerin listesi
+  Duration? currentSoundPosition; // Sesin mevcut oynatma konumu
+  bool isPlayingSound = false; // Sesin çalıp çalmadığını kontrol etmek için
 
 
   @override
@@ -142,7 +144,7 @@ class _GameScreenState extends State<GameScreen> {
         if (timerValue > 0 && !isPaused) {
           timerValue--;
 
-          // 10 saniye kaldığında sesi çal
+          // 10 saniye kaldığında sesi başlat
           if (timerValue == 10) {
             playTimerSound();
           }
@@ -153,13 +155,20 @@ class _GameScreenState extends State<GameScreen> {
       });
     });
   }
+
+
+
   void playTimerSound() async {
-    try {
-      await audioPlayer.play(AssetSource('sound/timer.MP3'));
-    } catch (e) {
-      print('Ses çalma sırasında hata oluştu: $e');
+    if (!isPlayingSound) {
+      isPlayingSound = true;
+      try {
+        await audioPlayer.play(AssetSource('sound/timer.MP3'));
+      } catch (e) {
+        print('Ses çalma sırasında hata oluştu: $e');
+      }
     }
   }
+
 
 
   void incrementCorrect() {
@@ -185,9 +194,7 @@ class _GameScreenState extends State<GameScreen> {
       }
 
       // Titreşim ekle
-      if (Vibration.hasVibrator() != null) {
-        Vibration.vibrate(duration: 500); // 500ms titreşim
-      }
+      Vibration.vibrate(duration: 500); // 500ms titreşim
 
       nextWord(); // Bir sonraki kelimeye geç
     });
@@ -286,18 +293,57 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void pauseTimer() {
-    setState(() {
-      isPaused = true;
-    });
-    timer?.cancel();
+    if (!isPaused) {
+      setState(() {
+        isPaused = true;
+      });
+      timer?.cancel(); // Mevcut zamanlayıcıyı durdur
+      timer = null; // Zamanlayıcı referansını sıfırla
+
+      // Ses çalıyorsa durdur
+      if (timerValue <= 10) {
+        stopTimerSound();
+      }
+    }
   }
 
+
   void resumeTimer() {
-    setState(() {
-      isPaused = false;
-    });
-    startTimer();
+    if (isPaused) {
+      setState(() {
+        isPaused = false;
+      });
+      if (timer == null) {
+        startTimer(); // Zamanlayıcıyı yeniden başlat
+      }
+
+      // 10 saniye kaldıysa sesi yeniden başlat
+      if (timerValue <= 10) {
+        playTimerSound();
+      }
+    }
   }
+
+
+  void stopTimerSound() async {
+    if (isPlayingSound) {
+      await audioPlayer.stop(); // Sesi durdur
+      isPlayingSound = false;
+    }
+  }
+
+  void resumeTimerSound() async {
+    try {
+      if (currentSoundPosition != null) {
+        await audioPlayer.seek(currentSoundPosition!); // Kaldığı yerden devam et
+        await audioPlayer.resume();
+        isPlayingSound = true;
+      }
+    } catch (e) {
+      print('Ses yeniden başlatılırken hata oluştu: $e');
+    }
+  }
+
 
   bool shouldShowJoker() {
     if (!widget.showJokers) return false; // Bu kontrol zaten `showJokerMessage` içinde yapılıyor.
@@ -477,62 +523,238 @@ class _GameScreenState extends State<GameScreen> {
 
 
 
-
-
   void showPauseScreen() {
+    if (!isPaused) {
+      pauseTimer(); // Timer'ı durdur
+    }
+
     showDialog(
-      barrierDismissible: false,
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Oyun Durduruldu'),
-        content: const Text('Oyun şu an duraklatıldı. Devam etmek ister misiniz?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              resumeTimer(); // Ekrana geri dönülürse timer tekrar başlatılır
-            },
-            child: const Text('Devam Et'),
+      barrierDismissible: true, // Kullanıcı arka plana tıklarsa kapatılabilir
+      barrierColor: Colors.black.withOpacity(0.9), // Karanlık arka plan
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25), // Yuvarlatılmış köşeler
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              confirmExit(); // Çıkış ekranı açılır
-            },
-            child: const Text('Ana Menüye Dön'),
+          elevation: 12,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.pause_circle_filled,
+                  size: 60,
+                  color: Colors.deepPurple,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Oyun Durduruldu',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 15),
+                const Text(
+                  'Oyun şu an duraklatıldı. Devam etmek ister misiniz?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 25),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Diyalog kapat
+                        resumeTimer(); // Timer'ı yeniden başlat
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 20,
+                        ),
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 5,
+                      ),
+                      icon: const Icon(
+                        Icons.play_arrow,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                      label: const Text(
+                        'Devam!',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Diyalog kapat
+                        confirmExit(); // Çıkış ekranını aç
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 20,
+                        ),
+                        backgroundColor: Colors.redAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 5,
+                      ),
+                      icon: const Icon(
+                        Icons.home,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                      label: const Text(
+                        'Menüye Dön',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     ).then((value) {
-      // Kullanıcı diyaloğu kapattıysa ve "Devam Et" seçilmediyse timer yeniden başlatılır
+      // Diyalog kapandığında ve oyun duraklatıldıysa süreyi yeniden başlat
       if (isPaused) {
-        resumeTimer(); // Timer'ı tekrar başlat
+        resumeTimer();
       }
     });
   }
 
   void confirmExit() {
+    pauseTimer(); // Timer'ı durdur
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Ana Menüye Dön'),
-        content: const Text('Emin misiniz?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Hayır'),
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.3),
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            },
-            child: const Text('Evet'),
+          elevation: 12,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(25.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.warning_rounded,
+                  size: 80,
+                  color: Colors.redAccent,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Ana Menüye Dön',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 15),
+                const Text(
+                  'Ana menüye dönmek istediğinize emin misiniz?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Diyalog kapat
+                        resumeTimer(); // Timer'ı yeniden başlat
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 25),
+                        backgroundColor: Colors.grey[300],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 5,
+                      ),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.black,
+                      ),
+                      label: const Text(
+                        'Hayır',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        stopTimerSound(); // Ses çalmayı durdur
+                        Navigator.of(context).popUntil((route) => route.isFirst); // Ana menüye dön
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 25),
+                        backgroundColor: Colors.redAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 5,
+                      ),
+                      icon: const Icon(
+                        Icons.check,
+                        color: Colors.white,
+                      ),
+                      label: const Text(
+                        'Evet',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
-    );
+        );
+      },
+    ).then((_) {
+      // Diyalog kapandığında ve oyun duraklatılmışsa timer yeniden başlatılır
+      if (isPaused) {
+        resumeTimer();
+      }
+    });
   }
 
   @override
@@ -542,24 +764,91 @@ class _GameScreenState extends State<GameScreen> {
         // Kullanıcı geri tuşuna bastığında çalışacak onay diyaloğu
         bool? shouldExit = await showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Ana Menüye Dön'),
-            content: const Text('Ana menüye dönmek istediğinize emin misiniz?'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(false); // Diyaloğu kapat, çıkışı engelle
-                },
-                child: const Text('Hayır'),
+          barrierDismissible: true, // Kullanıcı arka plana tıklarsa diyalog kapansın
+          barrierColor: Colors.black.withOpacity(0.7), // Arka plan karartma
+          builder: (context) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25), // Yumuşak köşeler
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(true); // Diyaloğu kapat, çıkışı onayla
-                },
-                child: const Text('Evet'),
+              backgroundColor: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      size: 80,
+                      color: Colors.orangeAccent,
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Takım Seçimine Dön',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                      textAlign: TextAlign.center, // Yazıları yatayda ortalar
+
+                    ),
+                    const SizedBox(height: 15),
+                    const Text(
+                      'Takım Seçimi Ekranına Dönmek İstediğinize Emin Misiniz?',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pop(false); // Diyalog kapat, çıkışı engelle
+                          },
+                          icon: const Icon(Icons.close, color: Colors.black),
+                          label: const Text(
+                            'Hayır',
+                            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red[300],
+                            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pop(true); // Diyalog kapat, çıkışı onayla
+                            resumeTimer(); // Timer'ı yeniden başlat
+
+                          },
+                          icon: const Icon(Icons.check, color: Colors.white),
+                          label: const Text(
+                            'Evet',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            );
+          },
         );
         return shouldExit ?? false; // Kullanıcı "Evet" dediyse çıkışa izin ver
       },

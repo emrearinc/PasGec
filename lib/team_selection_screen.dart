@@ -84,6 +84,7 @@ class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
       appBar: AppBar(
         title: const Text('Takım Seçimi'),
         backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -100,27 +101,9 @@ class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                const Center(
-                  child: Text(
-                    'Takım ve Oyuncu Bilgileri',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 10.0,
-                          color: Colors.black26,
-                          offset: Offset(2, 2),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                _buildTeamCard('1. Takım Bilgileri', _team1Controller, _team1PlayersControllers),
                 const SizedBox(height: 20),
-                _buildTeamCard('1. Takım', _team1Controller, _team1PlayersControllers),
-                const SizedBox(height: 20),
-                _buildTeamCard('2. Takım', _team2Controller, _team2PlayersControllers),
+                _buildTeamCard('2. Takım Bilgileri', _team2Controller, _team2PlayersControllers),
                 const SizedBox(height: 30),
                 Center(
                   child: ElevatedButton.icon(
