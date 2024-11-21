@@ -360,7 +360,7 @@ class _WordsScreenState extends State<WordsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('İptal', style: TextStyle(color: Colors.grey)),
+              child: const Text('İptal', style: TextStyle(color: Colors.black)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -380,7 +380,8 @@ class _WordsScreenState extends State<WordsScreen> {
                   Navigator.of(context).pop();
                 }
               },
-              child: const Text('Güncelle'),
+              child: const Text('Güncelle', style: TextStyle(color: Colors.white),),
+
             ),
           ],
         );

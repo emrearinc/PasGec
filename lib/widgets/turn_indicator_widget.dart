@@ -17,18 +17,18 @@ class TurnIndicatorWidget extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'Sıra Takımda: $currentTeamName',
+            'Mevcut Takım: $currentTeamName',
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Colors.yellow,
             ),
           ),
-          const SizedBox(height: 10), // Biraz boşluk ekleyin
+          const SizedBox(height: 5), // Biraz boşluk ekleyin
           Text(
-            'Sıradaki Oyuncu: $currentPlayerName',
+            'Mevcut Oyuncu: $currentPlayerName',
             style: const TextStyle(
-              fontSize: 20,
+              fontSize: 15,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
