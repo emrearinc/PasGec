@@ -70,12 +70,46 @@ class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Lütfen takım adlarını ve her iki takımın ilk oyuncusunu girin!'),
-        ),
-      );
+      showAlertDialog('Lütfen takım adlarını ve her iki takımın ilk oyuncusunu girin!');
     }
+  }
+
+  void showAlertDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Eksik Bilgi',
+            style: TextStyle(
+              color: Colors.deepPurple,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(color: Colors.black87),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                'Tamam',
+                style: TextStyle(
+                  color: Colors.deepPurpleAccent,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
