@@ -17,6 +17,8 @@ import 'package:audioplayers/audioplayers.dart';
 late AudioPlayer audioPlayer;
 
 class GameScreen extends StatefulWidget {
+  final List<String> team1Players;
+  final List<String> team2Players;
   final String team1Name;
   final String team2Name;
   final int gameTime;
@@ -29,6 +31,8 @@ class GameScreen extends StatefulWidget {
 
   const GameScreen({
     super.key,
+    required this.team1Players,
+    required this.team2Players,
     required this.team1Name,
     required this.team2Name,
     required this.gameTime,
@@ -80,21 +84,24 @@ class _GameScreenState extends State<GameScreen> {
   Set<String> usedJokers = {}; // Kullanılmış jokerlerin listesi
   Duration? currentSoundPosition; // Sesin mevcut oynatma konumu
   bool isPlayingSound = false; // Sesin çalıp çalmadığını kontrol etmek için
+  int currentPlayerIndexTeam1 = 0;
+  int currentPlayerIndexTeam2 = 0;
 
 
   @override
   void initState() {
     super.initState();
 
-// timerValue ve currentPassCount'u doğrudan widget parametrelerinden al
-    timerValue = widget.gameTime; // gameTime doğrudan widget'ten alınıyor
-    currentPassCount = widget.passLimit; // passLimit doğrudan widget'ten alınıyor
+    // Zamanlayıcı ve diğer başlangıç değerlerini ayarla
+    timerValue = widget.gameTime;
+    currentPassCount = widget.passLimit;
     isPassButtonDisabled = currentPassCount == 0;
 
+    // Veritabanından kelimeleri çek ve zamanlayıcıyı başlat
     fetchWordsFromDatabase();
     startTimer();
     _resetJokers();
-    audioPlayer = AudioPlayer(); // AudioPlayer'ı başlat
+    audioPlayer = AudioPlayer(); // AudioPlayer başlat
   }
 
   Future<void> fetchWordsFromDatabase() async {
@@ -156,6 +163,36 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
+
+  String getCurrentPlayer() {
+    return currentTeam == 1
+        ? widget.team1Players[currentPlayerIndexTeam1]
+        : widget.team2Players[currentPlayerIndexTeam2];
+  }
+
+  String getNextPlayer() {
+    if (currentTeam == 1) {
+      // Eğer mevcut takım 1 ise, sıradaki takım 2'nin oyuncusunu döndür
+      int nextIndex = (currentPlayerIndexTeam2 + 1) % widget.team2Players.length;
+      return widget.team2Players[nextIndex];
+    } else {
+      // Eğer mevcut takım 2 ise, sıradaki takım 1'in oyuncusunu döndür
+      int nextIndex = (currentPlayerIndexTeam1 + 1) % widget.team1Players.length;
+      return widget.team1Players[nextIndex];
+    }
+  }
+
+
+
+  void updatePlayerIndex() {
+    setState(() {
+      if (currentTeam == 1) {
+        currentPlayerIndexTeam1 = (currentPlayerIndexTeam1 + 1) % widget.team1Players.length;
+      } else {
+        currentPlayerIndexTeam2 = (currentPlayerIndexTeam2 + 1) % widget.team2Players.length;
+      }
+    });
+  }
 
 
   void playTimerSound() async {
@@ -255,35 +292,39 @@ class _GameScreenState extends State<GameScreen> {
         builder: (context) => NextTeamScreen(
           currentTeam: currentTeam == 1 ? widget.team1Name : widget.team2Name,
           nextTeam: currentTeam == 1 ? widget.team2Name : widget.team1Name,
+          currentPlayer: getCurrentPlayer(),
+          nextPlayer: getNextPlayer(),
           correctCount: correctCount,
           tabooCount: tabooCount,
           passCount: passCount,
         ),
       ),
     ).then((result) {
-      // Eğer NextTeamScreen'den true dönerse kelimeyi yenile
       if (result == true) {
-        resetCounts(); // Skor sayacı sıfırla
-        switchTurn(); // Takım değiştir
-        nextWord(); // Yeni kelime seç
+        resetCounts();
+        switchTurn();
+        nextWord();
       }
     });
   }
 
 
-
-
   void switchTurn() {
     setState(() {
       currentTeam = currentTeam == 1 ? 2 : 1;
-      currentPassCount = widget.passLimit; // Yeni turda pas hakları sıfırlanır
-      isPassButtonDisabled = currentPassCount == 0; // Yeni turda pas butonunun durumunu güncelle
+
+      if (currentTeam == 1) {
+        currentPlayerIndexTeam1 = (currentPlayerIndexTeam1 + 1) % widget.team1Players.length;
+      } else {
+        currentPlayerIndexTeam2 = (currentPlayerIndexTeam2 + 1) % widget.team2Players.length;
+      }
+
+      currentPassCount = widget.passLimit;
+      isPassButtonDisabled = currentPassCount == 0;
       resetTimer();
       showJokerMessage();
     });
   }
-
-
 
   void resetTimer() {
     setState(() {
@@ -461,42 +502,44 @@ class _GameScreenState extends State<GameScreen> {
 
   Set<int> usedWordIndexes = {};
 
-  void nextWord() {
-    setState(() {
-      if (usedWordIndexes.length == words.length) {
-        // Tüm kelimeler gösterildiyse resetlenir.
-        usedWordIndexes.clear();
-      }
-      do {
-        currentWordIndex = Random().nextInt(words.length);
-      } while (usedWordIndexes.contains(currentWordIndex));
-      usedWordIndexes.add(currentWordIndex);
-    });
-  }
-
-
-  void checkWinCondition() {
-    if (team1Score >= widget.gameScore || team2Score >= widget.gameScore) {
-      String winningTeam = team1Score >= widget.gameScore ? widget.team1Name : widget.team2Name;
-      isGameOver = true;  // Oyun kazanan ekranına geçerken isGameOver'ı true yapıyoruz
-      timer?.cancel();
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => WinnerScreen(
-            winningTeam: winningTeam,
-            onPlayAgain: resetGame,
-            onSettings: () {
-              Navigator.pop(context);
-            },
-            onMainMenu: () {
-              Navigator.popUntil(context, (route) => route.isFirst);
-            },
-          ),
-        ),
-      );
+    void nextWord() {
+      setState(() {
+        if (usedWordIndexes.length == words.length) {
+          usedWordIndexes.clear();
+        }
+        do {
+          currentWordIndex = Random().nextInt(words.length);
+        } while (usedWordIndexes.contains(currentWordIndex));
+        usedWordIndexes.add(currentWordIndex);
+      });
     }
-  }
+
+
+
+
+    void checkWinCondition() {
+      if (team1Score >= widget.gameScore || team2Score >= widget.gameScore) {
+        String winningTeam = team1Score >= widget.gameScore ? widget.team1Name : widget.team2Name;
+        isGameOver = true;
+        timer?.cancel();
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => WinnerScreen(
+              winningTeam: winningTeam,
+              onPlayAgain: resetGame,
+              onSettings: () {
+                Navigator.pop(context);
+              },
+              onMainMenu: () {
+                Navigator.popUntil(context, (route) => route.isFirst);
+              },
+            ),
+          ),
+        );
+      }
+    }
+
 
 
 
@@ -925,6 +968,7 @@ class _GameScreenState extends State<GameScreen> {
                             const SizedBox(height: 3),
                             TurnIndicatorWidget(
                               currentTeamName: currentTeam == 1 ? widget.team1Name : widget.team2Name,
+                              currentPlayerName: getCurrentPlayer(), // Oyuncu adını gönderiyoruz
                             ),
                             const SizedBox(height: 0),
                             TimerWidget(timerValue: timerValue),

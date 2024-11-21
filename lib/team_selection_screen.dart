@@ -47,19 +47,32 @@ class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
   void startGame() {
     String team1Name = _team1Controller.text.trim();
     String team2Name = _team2Controller.text.trim();
-    String team1Player1 = _team1PlayersControllers[0].text.trim();
-    String team2Player1 = _team2PlayersControllers[0].text.trim();
 
+    // 1. Takım oyuncularını listeye aktar
+    List<String> team1Players = _team1PlayersControllers
+        .map((controller) => controller.text.trim())
+        .where((player) => player.isNotEmpty)
+        .toList();
+
+    // 2. Takım oyuncularını listeye aktar
+    List<String> team2Players = _team2PlayersControllers
+        .map((controller) => controller.text.trim())
+        .where((player) => player.isNotEmpty)
+        .toList();
+
+    // Takım ve oyuncu kontrolü
     if (team1Name.isNotEmpty &&
         team2Name.isNotEmpty &&
-        team1Player1.isNotEmpty &&
-        team2Player1.isNotEmpty) {
+        team1Players.isNotEmpty &&
+        team2Players.isNotEmpty) {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => GameScreen(
             team1Name: team1Name,
             team2Name: team2Name,
+            team1Players: team1Players,
+            team2Players: team2Players,
             gameTime: widget.gameTime,
             gameScore: widget.gameScore,
             passLimit: widget.passLimit,
@@ -70,7 +83,7 @@ class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
         ),
       );
     } else {
-      showAlertDialog('Lütfen takım adlarını ve her iki takımın ilk oyuncusunu girin!');
+      showAlertDialog('Lütfen takım adlarını ve her iki takım için en az bir oyuncu girin!');
     }
   }
 

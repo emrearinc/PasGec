@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 class NextTeamScreen extends StatelessWidget {
   final String currentTeam;
   final String nextTeam;
+  final String currentPlayer; // Mevcut takımın oyuncusu
+  final String nextPlayer; // Sıradaki takımın oyuncusu
   final int correctCount;
   final int tabooCount;
   final int passCount;
@@ -11,10 +13,11 @@ class NextTeamScreen extends StatelessWidget {
     super.key,
     required this.currentTeam,
     required this.nextTeam,
+    required this.currentPlayer,
+    required this.nextPlayer,
     required this.correctCount,
     required this.tabooCount,
     required this.passCount,
-
   });
 
   @override
@@ -27,7 +30,7 @@ class NextTeamScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      extendBodyBehindAppBar: true, // Arka planın tam ekranda olmasını sağlar
+      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
           // Arka plan için degrade geçiş
@@ -70,46 +73,27 @@ class NextTeamScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            'Mevcut Takım',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.deepPurple.shade700,
-                            ),
-                          ),
-                          Text(
-                            currentTeam,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.deepPurple,
-                            ),
+                          // Mevcut Takım ve Oyuncu Bilgisi
+                          _buildTeamInfo(
+                            title: 'Mevcut Takım ve Oyuncu',
+                            team: currentTeam,
+                            player: currentPlayer,
+                            color: Colors.deepPurple,
                           ),
                           const SizedBox(height: 16),
-                          Text(
-                            'Sıradaki Takım',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.pinkAccent.shade700,
-                            ),
-                          ),
-                          Text(
-                            nextTeam,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.pinkAccent,
-                            ),
+                          // Sıradaki Takım ve Oyuncu Bilgisi
+                          _buildTeamInfo(
+                            title: 'Sıradaki Takım ve Oyuncu',
+                            team: nextTeam,
+                            player: nextPlayer,
+                            color: Colors.pinkAccent,
                           ),
                           const Divider(
                             color: Colors.deepPurple,
                             thickness: 1.5,
                             height: 30,
                           ),
+                          // Ek Bilgi Satırları
                           _buildInfoRow('Doğru Sayısı', correctCount.toString()),
                           const SizedBox(height: 8),
                           _buildInfoRow('Tabu Sayısı', tabooCount.toString()),
@@ -120,10 +104,10 @@ class NextTeamScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 25),
-                  // Buton
+                  // Devam Et Butonu
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).pop(true); // true değeri kelimenin yenilenmesi gerektiğini belirtir
+                      Navigator.of(context).pop(true);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.pinkAccent,
@@ -149,6 +133,37 @@ class NextTeamScreen extends StatelessWidget {
     );
   }
 
+  // Takım ve oyuncu bilgisi için yardımcı metod
+  Widget _buildTeamInfo({
+    required String title,
+    required String team,
+    required String player,
+    required Color color,
+  }) {
+    return Column(
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color.withOpacity(0.7),
+          ),
+        ),
+        Text(
+          '$team - $player',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Bilgi satırları için yardımcı metod
   Widget _buildInfoRow(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

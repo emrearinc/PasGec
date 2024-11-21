@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class ScoreCardWidget extends StatelessWidget {
-  final String teamName;
-  final int score;
+  final String teamName; // Takım adı
+  final int score; // Skor
 
   const ScoreCardWidget({
     Key? key,
@@ -15,6 +15,7 @@ class ScoreCardWidget extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Takım Adı Gösterimi
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
@@ -28,6 +29,7 @@ class ScoreCardWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 5),
+        // Skor Kartı
         Card(
           elevation: 6,
           shape: RoundedRectangleBorder(
@@ -39,7 +41,7 @@ class ScoreCardWidget extends StatelessWidget {
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                '$score',
+                '$score', // Skoru Göster
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
