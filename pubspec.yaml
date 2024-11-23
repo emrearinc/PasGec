@@ -4,7 +4,7 @@ publish_to: none
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.5.3
+  sdk: ">=3.5.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -18,6 +18,8 @@ dependencies:
   vibration: ^2.0.1
   audioplayers: ^6.1.0
   shared_preferences: ^2.2.0 # Mevcut en son sürümü kullanın
+  sqflite_sqlcipher: ^2.0.0 # En güncel sürümü kullanın
+  flutter_secure_storage: ^9.0.0
 
 dev_dependencies:
   flutter_test:
@@ -30,6 +32,10 @@ flutter:
     - assets/images/logo.png
     - assets/database/words_database.db
     - assets/sound/timer.MP3
+    - assets/sound/pas.MP3
+    - assets/sound/dogru.MP3
+    - assets/sound/yanlis.MP3
+
   fonts:
     - family: ComicSans
       fonts:

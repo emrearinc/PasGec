@@ -467,17 +467,15 @@ class GameScreenState extends State<GameScreen> {
 
   }
 
-  void showJokerMessage() {
+  void showJokerMessage() async {
     // Joker gösterim seçeneğini kontrol et
-    if (!widget.showJokers) return; // Joker gösterimi kapalıysa çık
-
-    // Joker gösterim ihtimaline göre kontrol et
-    Random random = Random();
-    if (random.nextDouble() >= widget.jokerProbability) return; // Joker gösterilmeyecekse çık
+    if (!widget.showJokers) return;
 
     // Joker mesajını getir
-    String? jokerMessage = Joker.getRandomJoker(probability: widget.jokerProbability);
-    if (jokerMessage != null) {
+    String? jokerMessage = await Joker.getRandomJoker(probability: widget.jokerProbability);
+
+    // Ekranın hala mounted olup olmadığını kontrol et
+    if (mounted && jokerMessage != null) {
       pauseTimer();
 
       // Rastgele animasyon, ikon ve diyalog tipi seçimi
@@ -497,6 +495,7 @@ class GameScreenState extends State<GameScreen> {
         Icons.card_giftcard,
       ];
 
+      final random = Random();
       final AnimType selectedAnimation = animations[random.nextInt(animations.length)];
       final DialogType selectedDialog = dialogTypes[random.nextInt(dialogTypes.length)];
       final IconData selectedIcon = icons[random.nextInt(icons.length)];
@@ -520,6 +519,7 @@ class GameScreenState extends State<GameScreen> {
       ).show();
     }
   }
+
 
 
   void resetGame() {

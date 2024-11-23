@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:sqflite/sqflite.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Güvenli depolama için
+import 'package:sqflite_sqlcipher/sqflite.dart'; // Şifrelenmiş veritabanı
 import 'package:path/path.dart';
 import 'package:flutter/services.dart';
 
@@ -12,6 +13,10 @@ class DatabaseHelper {
 
   static Database? _database;
 
+  /// Güvenli depolama için Flutter Secure Storage
+  final _secureStorage = const FlutterSecureStorage();
+  final _dbKey = 'db_encryption_key'; // Şifreleme anahtarı için anahtar adı
+
   /// Veritabanı nesnesini döndürür
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -19,9 +24,17 @@ class DatabaseHelper {
     return _database!;
   }
 
-  /// Veritabanını başlatır
+  /// Veritabanını başlatır ve şifreleme anahtarını güvenli bir şekilde saklar
   Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'words_database.db');
+    String path = join(await getDatabasesPath(), 'words_database_encrypted.db');
+
+    // Şifreleme anahtarını kontrol et
+    String? encryptionKey = await _secureStorage.read(key: _dbKey);
+    if (encryptionKey == null) {
+      // Anahtar yoksa yeni bir şifreleme anahtarı oluştur ve sakla
+      encryptionKey = _generateEncryptionKey();
+      await _secureStorage.write(key: _dbKey, value: encryptionKey);
+    }
 
     // Eğer veritabanı dosyası yoksa assets'ten kopyala
     if (!(await databaseExists(path))) {
@@ -32,10 +45,16 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 5,
+      version: 7, // Versiyon numarası burada değişir
+      password: encryptionKey, // Şifreleme anahtarı kullanılır
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
+  }
+
+  /// Şifreleme anahtarı oluşturucu
+  String _generateEncryptionKey() {
+    return List.generate(32, (index) => String.fromCharCode(33 + index % 94)).join();
   }
 
   /// Veritabanı oluşturma işlemleri
@@ -45,7 +64,8 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         word TEXT NOT NULL,
         forbidden_words TEXT NOT NULL,
-        category TEXT DEFAULT "General"
+        category TEXT DEFAULT "General",
+        difficulty TEXT DEFAULT 'easy'
       )
     ''');
 
@@ -91,11 +111,35 @@ class DatabaseHelper {
         )
       ''');
     }
+
+    if (oldVersion < 6) {
+      await db.execute('''
+        CREATE TEMPORARY TABLE words_backup AS SELECT * FROM words;
+      ''');
+      await db.execute('DROP TABLE IF EXISTS words;');
+      await db.execute('''
+        CREATE TABLE words (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          word TEXT NOT NULL,
+          forbidden_words TEXT NOT NULL,
+          category TEXT DEFAULT "General"
+        );
+      ''');
+      await db.execute('''
+        INSERT INTO words (id, word, forbidden_words, category)
+        SELECT id, word, forbidden_words, category FROM words_backup;
+      ''');
+      await db.execute('DROP TABLE words_backup;');
+    }
+
+    if (oldVersion < 7) {
+      await db.execute('''
+        ALTER TABLE words ADD COLUMN difficulty TEXT DEFAULT 'easy';
+      ''');
+    }
   }
 
   // ---------- Joker İşlemleri ----------
-
-  /// Joker ekler
   Future<void> addJoker(String message) async {
     final db = await database;
     await db.insert(
@@ -105,13 +149,11 @@ class DatabaseHelper {
     );
   }
 
-  /// Jokerleri getirir
   Future<List<Map<String, dynamic>>> getJokers() async {
     final db = await database;
     return await db.query('jokers');
   }
 
-  /// Joker günceller
   Future<void> updateJoker(int id, String message) async {
     final db = await database;
     await db.update(
@@ -122,14 +164,12 @@ class DatabaseHelper {
     );
   }
 
-  /// Joker siler
   Future<void> deleteJoker(int id) async {
     final db = await database;
     await db.delete('jokers', where: 'id = ?', whereArgs: [id]);
   }
 
   // ---------- Kelime İşlemleri ----------
-
   Future<List<Map<String, dynamic>>> getWords() async {
     final db = await database;
     return await db.query('words');
@@ -147,7 +187,6 @@ class DatabaseHelper {
     );
   }
 
-  /// Kelimeler arasında arama yapar
   Future<List<Map<String, dynamic>>> searchWords(String query) async {
     final db = await database;
     return await db.query(
@@ -176,7 +215,6 @@ class DatabaseHelper {
   }
 
   // ---------- Oyun Kayıt İşlemleri ----------
-
   Future<int> addGameRecord(String team1Name, String team2Name, int team1Score, int team2Score) async {
     final db = await database;
     return await db.insert(
@@ -197,7 +235,6 @@ class DatabaseHelper {
   }
 
   // ---------- Oyuncu Performansı İşlemleri ----------
-
   Future<void> addPlayerPerformance(
       int gameId,
       String teamName,
