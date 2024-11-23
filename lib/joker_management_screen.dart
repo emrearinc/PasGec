@@ -252,9 +252,24 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            trailing: IconButton(
-              icon: const Icon(Icons.edit, color: Colors.deepPurple),
-              onPressed: () => _showEditJokerDialog(joker['id'], joker['message']),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.deepPurple),
+                  onPressed: () => _showEditJokerDialog(joker['id'], joker['message']),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () async {
+                    final confirm = await _showConfirmationDialog(
+                        'Bu jokeri silmek istediğinizden emin misiniz?');
+                    if (confirm) {
+                      _deleteJoker(joker['id']);
+                    }
+                  },
+                ),
+              ],
             ),
             onTap: () => _showEditJokerDialog(joker['id'], joker['message']),
           ),
@@ -262,6 +277,7 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       },
     );
   }
+
 
   void _showAddJokerDialog() {
     _jokerController.clear();
