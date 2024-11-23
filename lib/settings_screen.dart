@@ -5,10 +5,10 @@ class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  _SettingsScreenState createState() => _SettingsScreenState();
+  SettingsScreenState createState() => SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class SettingsScreenState extends State<SettingsScreen> {
   int _gameScore = 25;
   int _gameTime = 60;
   int _passLimit = 3;
@@ -48,6 +48,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setInt('tabooPenalty', _tabooPenalty);
     await prefs.setBool('showJokers', _showJokers);
     await prefs.setDouble('jokerProbability', _jokerProbability);
+  }
+
+  /// Ayarları kaydet ve çık
+  Future<void> _saveSettingsAndExit() async {
+    await _saveSettings();
+
+    // Widget hala mounted ise Navigator çağrılır
+    if (mounted) {
+      Navigator.pop(context, true);
+    }
   }
 
   @override
@@ -153,7 +163,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Jokerler Gösterilsin', style: TextStyle(fontSize: 16)),
+                          const Text('Jokerler Gösterilsin',
+                              style: TextStyle(fontSize: 16)),
                           Switch(
                             value: _showJokers,
                             onChanged: (bool value) {
@@ -192,10 +203,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 30),
                 Center(
                   child: ElevatedButton(
-                    onPressed: () async {
-                      await _saveSettings(); // Ayarları kaydet
-                      Navigator.pop(context, true); // Ana ekrana dön ve başarı bilgisi gönder
-                    },
+                    onPressed: _saveSettingsAndExit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
                       foregroundColor: Colors.white,

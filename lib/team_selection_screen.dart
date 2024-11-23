@@ -20,10 +20,10 @@ class TeamSelectionScreen extends StatefulWidget {
   });
 
   @override
-  _TeamSelectionScreenState createState() => _TeamSelectionScreenState();
+  TeamSelectionScreenState createState() => TeamSelectionScreenState();
 }
 
-class _TeamSelectionScreenState extends State<TeamSelectionScreen> {
+class TeamSelectionScreenState extends State<TeamSelectionScreen> {
   final _team1Controller = TextEditingController();
   final _team2Controller = TextEditingController();
   final List<TextEditingController> _team1PlayersControllers =

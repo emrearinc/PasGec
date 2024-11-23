@@ -1,12 +1,12 @@
-// words_screen.dart
 import 'package:flutter/material.dart';
+import 'dart:developer';
 import 'database_helper.dart';
 
 class WordsScreen extends StatefulWidget {
-  const WordsScreen({Key? key}) : super(key: key);
+  const WordsScreen({super.key}); // Modern key kullanımı
 
   @override
-  _WordsScreenState createState() => _WordsScreenState();
+  State<WordsScreen> createState() => _WordsScreenState(); // Doğru konumlandırma
 }
 
 class _WordsScreenState extends State<WordsScreen> {
@@ -28,7 +28,7 @@ class _WordsScreenState extends State<WordsScreen> {
     super.dispose();
   }
 
-  void _fetchWords() async {
+  Future<void> _fetchWords() async {
     try {
       setState(() {
         _isLoading = true;
@@ -36,13 +36,16 @@ class _WordsScreenState extends State<WordsScreen> {
 
       final words = await DatabaseHelper().getWords();
 
+      if (!mounted) return; // Widget kaldırılmışsa işlemi durdur
+
       setState(() {
         _words = words;
         _filteredWords = words;
         _isLoading = false;
       });
     } catch (e) {
-      // Hata mesajını Snackbar ile göstermek
+      if (!mounted) return; // Widget kaldırılmışsa işlemi durdur
+
       setState(() {
         _isLoading = false;
       });
@@ -55,7 +58,6 @@ class _WordsScreenState extends State<WordsScreen> {
     }
   }
 
-
   void _onSearchChanged() async {
     try {
       final query = _searchController.text.trim().toLowerCase();
@@ -65,12 +67,16 @@ class _WordsScreenState extends State<WordsScreen> {
         });
       } else {
         final results = await DatabaseHelper().searchWords(query);
+
+        if (!mounted) return; // Widget kaldırılmışsa işlemi durdur
+
         setState(() {
           _filteredWords = results;
         });
       }
     } catch (e) {
-      // Hata durumunda kullanıcıya uyarı mesajı göstermek için AlertDialog kullanıyoruz
+      if (!mounted) return; // Widget kaldırılmışsa işlemi durdur
+
       showDialog(
         context: context,
         builder: (context) {
@@ -88,7 +94,6 @@ class _WordsScreenState extends State<WordsScreen> {
       );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -162,11 +167,11 @@ class _WordsScreenState extends State<WordsScreen> {
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () => _deleteWord(word['id']),
                     ),
-                    onTap: () =>
-                        _showEditWordDialog(
-                            word['id'],
-                            word['word'],
-                            word['forbidden_words']?.split(', ') ?? []),
+                    onTap: () => _showEditWordDialog(
+                      word['id'],
+                      word['word'],
+                      word['forbidden_words']?.split(', ') ?? [],
+                    ),
                   ),
                 );
               },
@@ -255,72 +260,19 @@ class _WordsScreenState extends State<WordsScreen> {
       },
     );
   }
-
-  void _addWord(String word, List<String> forbiddenWords) async {
-    try {
-      await DatabaseHelper().addWord(word, forbiddenWords);
-      _fetchWords();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kelime başarıyla eklendi!')),
-      );
-    } catch (e) {
-      print("Kelime eklenirken hata oluştu: $e");
-    }
-  }
-
-  void _deleteWord(int id) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) =>
-          AlertDialog(
-            title: const Text('Kelime Sil'),
-            content: const Text(
-                'Bu kelimeyi silmek istediğinize emin misiniz?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Hayır'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Evet'),
-              ),
-            ],
-          ),
-    );
-
-    if (confirm == true) {
-      try {
-        await DatabaseHelper().deleteWord(id);
-        _fetchWords();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kelime başarıyla silindi!')),
-        );
-      } catch (e) {
-        print("Kelime silinirken hata oluştu: $e");
-      }
-    }
-  }
-
-  void _showEditWordDialog(int id, String initialWord,
-      List<String> initialForbiddenWords) {
-    final TextEditingController wordController =
-    TextEditingController(text: initialWord);
+  void _showEditWordDialog(int id, String initialWord, List<String> initialForbiddenWords) {
+    final TextEditingController wordController = TextEditingController(text: initialWord);
     final List<TextEditingController> forbiddenControllers = List.generate(
       5,
-          (i) =>
-          TextEditingController(
-              text: i < initialForbiddenWords.length
-                  ? initialForbiddenWords[i]
-                  : ''),
+          (i) => TextEditingController(
+          text: i < initialForbiddenWords.length ? initialForbiddenWords[i] : ''),
     );
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Center(
             child: Text(
               'Kelimeyi Düzenle',
@@ -336,8 +288,7 @@ class _WordsScreenState extends State<WordsScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Kelime',
                     border: OutlineInputBorder(),
-                    contentPadding:
-                    EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -349,8 +300,7 @@ class _WordsScreenState extends State<WordsScreen> {
                       decoration: InputDecoration(
                         labelText: 'Yasaklı Kelime ${i + 1}',
                         border: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 15),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                       ),
                     ),
                   ),
@@ -380,8 +330,7 @@ class _WordsScreenState extends State<WordsScreen> {
                   Navigator.of(context).pop();
                 }
               },
-              child: const Text('Güncelle', style: TextStyle(color: Colors.white),),
-
+              child: const Text('Güncelle', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -392,44 +341,78 @@ class _WordsScreenState extends State<WordsScreen> {
   void _updateWord(int id, String word, List<String> forbiddenWords) async {
     try {
       await DatabaseHelper().updateWord(id, word, forbiddenWords);
+      if (!mounted) return; // Eğer widget kaldırılmışsa işlem iptal edilir
       _fetchWords();
       // Başarı mesajı
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Başarılı'),
-            content: const Text('Kelime başarıyla güncellendi!'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Dialog kapatılır
-                },
-                child: const Text('Tamam'),
-              ),
-            ],
-          );
-        },
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kelime başarıyla güncellendi!')),
       );
     } catch (e) {
-      // Hata mesajını AlertDialog ile göstermek
+      if (!mounted) return; // Eğer widget kaldırılmışsa işlem iptal edilir
+      // Hata mesajını göstermek
       showDialog(
         context: context,
-        builder: (BuildContext context) {
+        builder: (context) {
           return AlertDialog(
             title: const Text('Hata'),
             content: Text('Kelime güncellenirken hata oluştu: $e'),
             actions: [
               TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Dialog kapatılır
-                },
+                onPressed: () => Navigator.of(context).pop(),
                 child: const Text('Tamam'),
               ),
             ],
           );
         },
       );
+    }
+  }
+
+  void _addWord(String word, List<String> forbiddenWords) async {
+    try {
+      await DatabaseHelper().addWord(word, forbiddenWords);
+      if (!mounted) return; // Widget kaldırılmışsa işlemi durdur
+
+      _fetchWords();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kelime başarıyla eklendi!')),
+      );
+    } catch (e) {
+      log("Kelime eklenirken hata oluştu: $e");
+    }
+  }
+
+  void _deleteWord(int id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Kelime Sil'),
+        content: const Text('Bu kelimeyi silmek istediğinize emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Hayır'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Evet'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await DatabaseHelper().deleteWord(id);
+        if (!mounted) return; // Widget kaldırılmışsa işlemi durdur
+
+        _fetchWords();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Kelime başarıyla silindi!')),
+        );
+      } catch (e) {
+        log("Kelime silinirken hata oluştu: $e");
+      }
     }
   }
 }

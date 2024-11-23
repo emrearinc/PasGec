@@ -14,6 +14,7 @@ import 'package:vibration/vibration.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:tabu_oyunu/models/player_performance.dart';
 import 'package:tabu_oyunu/winner_screen.dart';
+import 'dart:developer' as developer; // Geliştirici günlükleme için
 
 late AudioPlayer audioPlayer;
 
@@ -46,7 +47,7 @@ class GameScreen extends StatefulWidget {
 
 
   @override
-  _GameScreenState createState() => _GameScreenState();
+  GameScreenState createState() => GameScreenState();
 }
 
 // Veritabanından alınan kelimeleri saklamak için model sınıfı
@@ -66,7 +67,7 @@ class Word {
   }
 }
 
-class _GameScreenState extends State<GameScreen> {
+class GameScreenState extends State<GameScreen> {
   List<Word> words = [];
   int currentWordIndex = 0;
   late int timerValue;
@@ -137,32 +138,46 @@ class _GameScreenState extends State<GameScreen> {
     try {
       final dbWords = await DatabaseHelper().getWords();
 
-      if (dbWords.isEmpty) {
-        // Veritabanında kelime bulunamadı mesajı
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Veritabanında kelime bulunamadı!'),
-            duration: Duration(seconds: 2),
-          ),
+      if (dbWords.isEmpty && mounted) {
+        // showDialog doğrudan çağrılır
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Uyarı'),
+              content: const Text('Veritabanında kelime bulunamadı!'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Tamam'),
+                ),
+              ],
+            );
+          },
         );
       }
 
       List<Word> loadedWords = dbWords.map((map) => Word.fromMap(map)).toList();
       loadedWords.shuffle(); // Kelimeleri karıştırıyoruz
 
-      setState(() {
-        words = loadedWords;
-      });
+      if (mounted) {
+        // Ekran hala açıkken setState çağrılır
+        setState(() {
+          words = loadedWords;
+        });
+      }
     } catch (e) {
-      // Hata mesajı
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Kelimeler yüklenirken hata oluştu: $e'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kelimeler yüklenirken hata oluştu: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
+
 
 
 
@@ -224,9 +239,6 @@ class _GameScreenState extends State<GameScreen> {
       }
     });
 
-    // Güncellemeden sonra listeyi kontrol et
-    print("Updated Team 1 Performances: $team1Performances");
-    print("Updated Team 2 Performances: $team2Performances");
   }
 
   void updatePlayerIndex() {
@@ -245,13 +257,15 @@ class _GameScreenState extends State<GameScreen> {
       isPlayingSound = true;
       try {
         await audioPlayer.play(AssetSource('sound/timer.MP3'));
-      } catch (e) {
-        print('Ses çalma sırasında hata oluştu: $e');
+      } catch (e, stackTrace) {
+        developer.log(
+          'Ses çalma sırasında hata oluştu',
+          error: e,
+          stackTrace: stackTrace,
+        );
       }
     }
   }
-
-
 
   void incrementCorrect() {
     updatePlayerPerformance(getCurrentPlayer(), correct: 1);
@@ -430,11 +444,14 @@ class _GameScreenState extends State<GameScreen> {
         await audioPlayer.resume();
         isPlayingSound = true;
       }
-    } catch (e) {
-      print('Ses yeniden başlatılırken hata oluştu: $e');
+    } catch (e, stackTrace) {
+      developer.log(
+        'Ses yeniden başlatılırken hata oluştu',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
-
 
   bool shouldShowJoker() {
     if (!widget.showJokers) return false; // Bu kontrol zaten `showJokerMessage` içinde yapılıyor.
@@ -575,9 +592,6 @@ class _GameScreenState extends State<GameScreen> {
       isGameOver = true;
       timer?.cancel();
       // Performans listelerini konsolda kontrol et
-      print("Team 1 Performances: $team1Performances");
-      print("Team 2 Performances: $team2Performances");
-
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -589,9 +603,6 @@ class _GameScreenState extends State<GameScreen> {
             team2Performances: team2Performances,
 
             onPlayAgain: resetGame, // Yeniden oyun başlatma
-            onSettings: () {
-              Navigator.pop(context); // Ayarlar ekranına dönmek için
-            },
             onMainMenu: () {
               Navigator.popUntil(context, (route) => route.isFirst); // Ana menüye dönmek için
             },
@@ -882,109 +893,94 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        // Kullanıcı geri tuşuna bastığında çalışacak onay diyaloğu
-        bool? shouldExit = await showDialog(
-          context: context,
-          barrierDismissible: true, // Kullanıcı arka plana tıklarsa diyalog kapansın
-          barrierColor: Colors.black.withOpacity(0.7), // Arka plan karartma
-          builder: (context) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25), // Yumuşak köşeler
+// Onay diyaloğunu gösteren yardımcı metot
+  Future<bool> showExitConfirmationDialog(BuildContext context) async {
+    final bool? shouldExit = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Çıkış Onayı',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            'Takım seçimi ekranına dönmek istediğinize emin misiniz?',
+            style: TextStyle(fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(false); // Ekranda kal
+              },
+              child: const Text(
+                'Hayır',
+                style: TextStyle(color: Colors.redAccent),
               ),
-              backgroundColor: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.warning_amber_rounded,
-                      size: 80,
-                      color: Colors.orangeAccent,
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Takım Seçimine Dön',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                      textAlign: TextAlign.center, // Yazıları yatayda ortalar
-
-                    ),
-                    const SizedBox(height: 15),
-                    const Text(
-                      'Takım Seçimi Ekranına Dönmek İstediğinize Emin Misiniz?',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.black54,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).pop(false); // Diyalog kapat, çıkışı engelle
-                          },
-                          icon: const Icon(Icons.close, color: Colors.black),
-                          label: const Text(
-                            'Hayır',
-                            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red[300],
-                            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                          ),
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).pop(true); // Diyalog kapat, çıkışı onayla
-                            resumeTimer(); // Timer'ı yeniden başlat
-
-                          },
-                          icon: const Icon(Icons.check, color: Colors.white),
-                          label: const Text(
-                            'Evet',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true); // Ana menüye dön
+              },
+              child: const Text(
+                'Evet',
+                style: TextStyle(color: Colors.green),
               ),
-            );
-          },
+            ),
+          ],
         );
-        return shouldExit ?? false; // Kullanıcı "Evet" dediyse çıkışa izin ver
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Oyun Ekranı'),
-          centerTitle: true,
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          flexibleSpace: Container(
+    );
+
+    return shouldExit ?? false; // Varsayılan olarak çıkışı engelle
+  }
+
+
+// AppBar Oluşturucu
+  PreferredSizeWidget buildAppBar() {
+    return AppBar(
+      title: const Text('Oyun Ekranı'),
+      centerTitle: true,
+      backgroundColor: Colors.transparent,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple, Colors.pinkAccent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.pause),
+          onPressed: () {
+            pauseTimer();
+            showPauseScreen();
+          },
+        ),
+      ],
+    );
+  }
+
+// Ana İçerik
+  Widget buildBody(BuildContext context) {
+    if (words.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+        ),
+      );
+    }
+    return Column(
+      children: [
+        Expanded(
+          child: Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [Colors.deepPurple, Colors.pinkAccent],
@@ -992,115 +988,104 @@ class _GameScreenState extends State<GameScreen> {
                 end: Alignment.bottomRight,
               ),
             ),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.pause),
-              onPressed: () {
-                pauseTimer();
-                showPauseScreen();
-              },
-            ),
-          ],
-        ),
-        extendBodyBehindAppBar: true,
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            if (words.isEmpty) {
-              // Eğer kelimeler yüklenmediyse yükleniyor ekranı göster
-              return const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
-                ),
-              );
-            } else {
-              // Kelimeler yüklendiğinde oyun ekranını göster
-              return Column(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 1.0),
+              child: ListView(
                 children: [
-                  Expanded(
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.deepPurple, Colors.pinkAccent],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: ScoreCardWidget(
+                          teamName: widget.team1Name,
+                          score: team1Score,
                         ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 1.0),
-                        child: ListView(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: ScoreCardWidget(
-                                    teamName: widget.team1Name,
-                                    score: team1Score,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: ScoreCardWidget(
-                                    teamName: widget.team2Name,
-                                    score: team2Score,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 3),
-                            TurnIndicatorWidget(
-                              currentTeamName: currentTeam == 1 ? widget.team1Name : widget.team2Name,
-                              currentPlayerName: getCurrentPlayer(), // Oyuncu adını gönderiyoruz
-                            ),
-                            const SizedBox(height: 0),
-                            TimerWidget(timerValue: timerValue),
-                            const SizedBox(height: 1),
-                            _buildWordCard(words[currentWordIndex]),
-                          ],
+                      Expanded(
+                        child: ScoreCardWidget(
+                          teamName: widget.team2Name,
+                          score: team2Score,
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Expanded(
-                          child: GameButtonWidget(
-                            label: 'Pas',
-                            icon: Icons.skip_next,
-                            color: isPassButtonDisabled ? Colors.grey : Colors.blue,
-                            onPressed: isPassButtonDisabled ? () {} : incrementPass,
-                          ),
-                        ),
-                        Expanded(
-                          child: GameButtonWidget(
-                            label: 'Tabu',
-                            icon: Icons.cancel,
-                            color: Colors.red,
-                            onPressed: incrementTaboo,
-                          ),
-                        ),
-                        Expanded(
-                          child: GameButtonWidget(
-                            label: 'Doğru',
-                            icon: Icons.check_circle,
-                            color: Colors.green,
-                            onPressed: incrementCorrect,
-                          ),
-                        ),
-                      ],
-                    ),
+                  const SizedBox(height: 3),
+                  TurnIndicatorWidget(
+                    currentTeamName: currentTeam == 1
+                        ? widget.team1Name
+                        : widget.team2Name,
+                    currentPlayerName: getCurrentPlayer(),
                   ),
+                  const SizedBox(height: 0),
+                  TimerWidget(timerValue: timerValue),
+                  const SizedBox(height: 1),
+                  _buildWordCard(words[currentWordIndex]),
                 ],
-              );
-            }
-          },
+              ),
+            ),
+          ),
         ),
+        buildFooterButtons(),
+      ],
+    );
+  }
+
+// Alt Butonları Oluşturucu
+  Widget buildFooterButtons() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Expanded(
+            child: GameButtonWidget(
+              label: 'Pas',
+              icon: Icons.skip_next,
+              color: isPassButtonDisabled ? Colors.grey : Colors.blue,
+              onPressed: isPassButtonDisabled ? () {} : incrementPass,
+            ),
+          ),
+          Expanded(
+            child: GameButtonWidget(
+              label: 'Tabu',
+              icon: Icons.cancel,
+              color: Colors.red,
+              onPressed: incrementTaboo,
+            ),
+          ),
+          Expanded(
+            child: GameButtonWidget(
+              label: 'Doğru',
+              icon: Icons.check_circle,
+              color: Colors.green,
+              onPressed: incrementCorrect,
+            ),
+          ),
+        ],
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        final bool shouldExit = await showExitConfirmationDialog(context);
+        return shouldExit;
+      },
+      child: Scaffold(
+        appBar: buildAppBar(),
+        extendBodyBehindAppBar: true,
+        body: buildBody(context),
+      ),
+    );
+  }
+
+
+
+
+
+
 
 
   Widget _buildWordCard(Word word) {

@@ -5,10 +5,10 @@ class TurnIndicatorWidget extends StatelessWidget {
   final String currentPlayerName; // Yeni parametre: Sıradaki oyuncunun adı
 
   const TurnIndicatorWidget({
-    Key? key,
+    super.key, // Modern `key` kullanımı
     required this.currentTeamName,
     required this.currentPlayerName,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,21 +16,49 @@ class TurnIndicatorWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            'Mevcut Takım: $currentTeamName',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.yellow,
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'Mevcut Takım: ',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber, // Koyu turuncu
+                  ),
+                ),
+                TextSpan(
+                  text: currentTeamName,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white, // Beyaz renk
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 5), // Biraz boşluk ekleyin
-          Text(
-            'Mevcut Oyuncu: $currentPlayerName',
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'Mevcut Oyuncu: ',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber, // Koyu turuncu
+                  ),
+                ),
+                TextSpan(
+                  text: currentPlayerName,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white, // Beyaz renk
+                  ),
+                ),
+              ],
             ),
           ),
         ],

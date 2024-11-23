@@ -4,9 +4,9 @@ class TimerWidget extends StatelessWidget {
   final int timerValue;
 
   const TimerWidget({
-    Key? key,
+    super.key, // Modern `key` kullanımı
     required this.timerValue,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

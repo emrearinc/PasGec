@@ -9,20 +9,18 @@ class WinnerScreen extends StatefulWidget {
   final List<PlayerPerformance> team1Performances;
   final List<PlayerPerformance> team2Performances;
   final VoidCallback onPlayAgain;
-  final VoidCallback onSettings;
   final VoidCallback onMainMenu;
 
   const WinnerScreen({
-    Key? key,
+    super.key,
     required this.winningTeam,
     required this.team1Name,
     required this.team2Name,
     required this.team1Performances,
     required this.team2Performances,
     required this.onPlayAgain,
-    required this.onSettings,
     required this.onMainMenu,
-  }) : super(key: key);
+  });
 
   @override
   State<WinnerScreen> createState() => _WinnerScreenState();
@@ -74,19 +72,44 @@ class _WinnerScreenState extends State<WinnerScreen> {
       }
 
       // Başarı mesajı
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Oyun bilgileri başarıyla kaydedildi!')),
-      );
-
+      await _showSaveGameResult("Oyun bilgileri başarıyla kaydedildi!");
       setState(() {
         _isSaved = true; // Kaydın tamamlandığını işaretle
       });
     } catch (e) {
       // Hata mesajı
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Veritabanına kaydedilirken hata oluştu: $e')),
-      );
+      await _showSaveGameResult("Veritabanına kaydedilirken hata oluştu: $e", isSuccess: false);
     }
+  }
+
+  Future<void> _showSaveGameResult(String message, {bool isSuccess = true}) async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            isSuccess ? "Başarılı" : "Hata",
+            style: TextStyle(
+              color: isSuccess ? Colors.green : Colors.red,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Tamam"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -110,6 +133,8 @@ class _WinnerScreenState extends State<WinnerScreen> {
         ),
       ),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Colors.deepPurple, Colors.pinkAccent],
@@ -138,8 +163,6 @@ class _WinnerScreenState extends State<WinnerScreen> {
                 _buildPerformanceCard(widget.team2Name, widget.team2Performances),
                 const SizedBox(height: 30),
                 _buildButton("Yeniden Oyna", Colors.green, widget.onPlayAgain),
-                const SizedBox(height: 15),
-                _buildButton("Ayarlar", Colors.blue, widget.onSettings),
                 const SizedBox(height: 15),
                 _buildButton("Ana Menü", Colors.red, widget.onMainMenu),
               ],
@@ -173,7 +196,7 @@ class _WinnerScreenState extends State<WinnerScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-            ...performances.map((performance) {
+            ...performances.map((performance) { // `toList` kaldırıldı
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Container(
@@ -232,12 +255,13 @@ class _WinnerScreenState extends State<WinnerScreen> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
     );
   }
+
 
   Widget _buildButton(String label, Color color, VoidCallback onPressed) {
     return ElevatedButton(

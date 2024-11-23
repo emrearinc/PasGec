@@ -6,10 +6,10 @@ class ScoresScreen extends StatefulWidget {
   const ScoresScreen({super.key});
 
   @override
-  _ScoresScreenState createState() => _ScoresScreenState();
+  ScoresScreenState createState() => ScoresScreenState();
 }
 
-class _ScoresScreenState extends State<ScoresScreen> {
+class ScoresScreenState extends State<ScoresScreen> {
   List<Map<String, dynamic>> scores = [];
 
   @override

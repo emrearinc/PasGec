@@ -7,12 +7,12 @@ class GameButtonWidget extends StatelessWidget {
   final VoidCallback onPressed;
 
   const GameButtonWidget({
-    Key? key,
+    super.key,
     required this.label,
     required this.icon,
     required this.color,
     required this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
