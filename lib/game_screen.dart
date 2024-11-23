@@ -894,55 +894,124 @@ class GameScreenState extends State<GameScreen> {
   }
 
 // Onay diyaloğunu gösteren yardımcı metot
+// Onay diyaloğunu gösteren yardımcı metot
   Future<bool> showExitConfirmationDialog(BuildContext context) async {
     final bool? shouldExit = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.3),
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
+        return Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(25),
           ),
-          title: const Text(
-            'Çıkış Onayı',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: const Text(
-            'Takım seçimi ekranına dönmek istediğinize emin misiniz?',
-            style: TextStyle(fontSize: 16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(false); // Ekranda kal
-              },
-              child: const Text(
-                'Hayır',
-                style: TextStyle(color: Colors.redAccent),
-              ),
+          elevation: 12,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(25.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // İkon
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  size: 80,
+                  color: Colors.redAccent,
+                ),
+                const SizedBox(height: 20),
+
+                // Başlık
+                const Text(
+                  'Çıkış Onayı',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 15),
+
+                // Açıklama Metni
+                const Text(
+                  'Takım seçimi ekranına dönmek istediğinize emin misiniz?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 30),
+
+                // Butonlar
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // Hayır Butonu
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop(false); // Diyalog kapat
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 25),
+                        backgroundColor: Colors.grey[300],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 5,
+                      ),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.black,
+                      ),
+                      label: const Text(
+                        'Hayır',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    // Evet Butonu
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop(true); // Ana menüye dön
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 25),
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 5,
+                      ),
+                      icon: const Icon(
+                        Icons.check,
+                        color: Colors.white,
+                      ),
+                      label: const Text(
+                        'Evet',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(true); // Ana menüye dön
-              },
-              child: const Text(
-                'Evet',
-                style: TextStyle(color: Colors.green),
-              ),
-            ),
-          ],
+          ),
         );
       },
     );
-
-    return shouldExit ?? false; // Varsayılan olarak çıkışı engelle
+    return shouldExit ?? false;
   }
 
 
 // AppBar Oluşturucu
+// AppBar Oluşturucu
   PreferredSizeWidget buildAppBar() {
     return AppBar(
-      title: const Text('Oyun Ekranı'),
       centerTitle: true,
       backgroundColor: Colors.transparent,
       foregroundColor: Colors.white,
@@ -953,6 +1022,21 @@ class GameScreenState extends State<GameScreen> {
             colors: [Colors.deepPurple, Colors.pinkAccent],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
+          ),
+        ),
+      ),
+      title: ShaderMask(
+        shaderCallback: (bounds) => const LinearGradient(
+          colors: [Colors.yellow, Colors.orange],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ).createShader(bounds),
+        child: const Text(
+          'PasGeç',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 35,
+            color: Colors.white, // Gradient nedeniyle bu beyaz renk görünmez
           ),
         ),
       ),
@@ -967,6 +1051,7 @@ class GameScreenState extends State<GameScreen> {
       ],
     );
   }
+
 
 // Ana İçerik
   Widget buildBody(BuildContext context) {

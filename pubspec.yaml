@@ -30,3 +30,7 @@ flutter:
     - assets/images/logo.png
     - assets/database/words_database.db
     - assets/sound/timer.MP3
+  fonts:
+    - family: ComicSans
+      fonts:
+        - asset: assets/fonts/comic_sans.ttf

@@ -1,0 +1,300 @@
+import 'package:flutter/material.dart';
+import 'database_helper.dart';
+
+class JokerManagementScreen extends StatefulWidget {
+  const JokerManagementScreen({super.key});
+
+  @override
+  JokerManagementScreenState createState() => JokerManagementScreenState();
+}
+
+class JokerManagementScreenState extends State<JokerManagementScreen> {
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _jokerController = TextEditingController();
+  List<Map<String, dynamic>> _jokers = [];
+  List<Map<String, dynamic>> _filteredJokers = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchJokers();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchJokers() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final jokers = await _dbHelper.getJokers();
+    setState(() {
+      _jokers = jokers;
+      _filteredJokers = jokers;
+      _isLoading = false;
+    });
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.trim().toLowerCase();
+    setState(() {
+      _filteredJokers = query.isEmpty
+          ? _jokers
+          : _jokers
+          .where((joker) =>
+          joker['message'].toString().toLowerCase().contains(query))
+          .toList();
+    });
+  }
+
+  Future<void> _addJoker() async {
+    if (_jokerController.text.isNotEmpty) {
+      await _dbHelper.addJoker(_jokerController.text.trim());
+      _jokerController.clear();
+      await _fetchJokers();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Joker başarıyla eklendi!')),
+        );
+      }
+    } else {
+      _showErrorDialog('Lütfen joker mesajını giriniz!');
+    }
+  }
+
+  Future<void> _updateJoker(int id, String newMessage) async {
+    if (newMessage.isNotEmpty) {
+      await _dbHelper.updateJoker(id, newMessage.trim());
+      await _fetchJokers();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Joker başarıyla güncellendi!')),
+        );
+      }
+    } else {
+      _showErrorDialog('Joker mesajı boş olamaz!');
+    }
+  }
+
+  Future<void> _deleteJoker(int id) async {
+    final confirm = await _showConfirmationDialog(
+        'Bu jokeri silmek istediğinize emin misiniz?');
+    if (confirm) {
+      await _dbHelper.deleteJoker(id);
+      await _fetchJokers();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Joker başarıyla silindi!')),
+        );
+      }
+    }
+  }
+
+  Future<void> _showErrorDialog(String message) async {
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Hata'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tamam'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Future<bool> _showConfirmationDialog(String message) async {
+    return await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Onay'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hayır'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Evet'),
+          ),
+        ],
+      ),
+    ) ??
+        false;
+  }
+
+  Future<void> _showEditJokerDialog(int id, String currentMessage) async {
+    final TextEditingController editController =
+    TextEditingController(text: currentMessage);
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Center(
+            child: Text(
+              'Jokeri Düzenle',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+          ),
+          content: TextField(
+            controller: editController,
+            maxLines: null,
+            textAlignVertical: TextAlignVertical.top,
+            decoration: const InputDecoration(
+              labelText: 'Joker Mesajı',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _updateJoker(id, editController.text);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Kaydet'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Jokerleri Yönet'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: _showAddJokerDialog,
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple, Colors.purpleAccent, Colors.blueAccent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  hintText: 'Joker Ara...',
+                  prefixIcon: Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Text(
+                "Toplam Joker Sayısı: ${_filteredJokers.length}",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            Expanded(child: _buildJokerList()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildJokerList() {
+    return ListView.builder(
+      itemCount: _filteredJokers.length,
+      itemBuilder: (context, index) {
+        final joker = _filteredJokers[index];
+        return Card(
+          margin: const EdgeInsets.all(8.0),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          elevation: 3,
+          color: Colors.white.withOpacity(0.9),
+          child: ListTile(
+            title: Text(
+              joker['message'],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.edit, color: Colors.deepPurple),
+              onPressed: () => _showEditJokerDialog(joker['id'], joker['message']),
+            ),
+            onTap: () => _showEditJokerDialog(joker['id'], joker['message']),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showAddJokerDialog() {
+    _jokerController.clear();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Yeni Joker Ekle'),
+          content: TextField(
+            controller: _jokerController,
+            maxLines: null,
+            textAlignVertical: TextAlignVertical.top,
+            decoration: const InputDecoration(
+              labelText: 'Joker Mesajı',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _addJoker();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Ekle'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}

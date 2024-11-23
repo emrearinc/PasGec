@@ -5,6 +5,7 @@ import 'settings_screen.dart';
 import 'words_screen.dart';
 import 'how_to_play_screen.dart';
 import 'scores_screen.dart';
+import 'joker_management_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -144,6 +145,17 @@ class HomeScreenState extends State<HomeScreen> {
                             MaterialPageRoute(
                               builder: (context) => const ScoresScreen(), // Parametre gerekmez
                             ),
+                          );
+                        },
+                      ),
+                      _buildHomeCard(
+                        label: 'Jokerleri Yönet',
+                        icon: Icons.extension,
+                        color: Colors.purple,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const JokerManagementScreen()),
                           );
                         },
                       ),
