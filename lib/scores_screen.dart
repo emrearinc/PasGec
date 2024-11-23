@@ -29,15 +29,21 @@ class ScoresScreenState extends State<ScoresScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true, // AppBar'ın içerikten bağımsız görünmesini sağlar
       appBar: AppBar(
-        title: const Text('Skorlar'),
-        backgroundColor: Colors.deepPurple,
+        title: const Text(
+          'Skorlar',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent, // Şeffaf AppBar
         foregroundColor: Colors.white,
+        elevation: 0, // Ayrım çizgisini kaldırır
       ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.purpleAccent],
+            colors: [Colors.blueAccent, Colors.lightBlue, Colors.purpleAccent],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -47,7 +53,11 @@ class ScoresScreenState extends State<ScoresScreen> {
           child: CircularProgressIndicator(),
         )
             : ListView.builder(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.only(
+            top: kToolbarHeight + 16.0, // AppBar'ı dikkate alarak padding ekledik
+            left: 16.0,
+            right: 16.0,
+          ),
           itemCount: scores.length,
           itemBuilder: (context, index) {
             final score = scores[index];
@@ -59,7 +69,7 @@ class ScoresScreenState extends State<ScoresScreen> {
               ),
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: Colors.blueAccent,
                   child: Text(
                     '${index + 1}',
                     style: const TextStyle(color: Colors.white),
@@ -74,7 +84,8 @@ class ScoresScreenState extends State<ScoresScreen> {
                 ),
                 subtitle: Text(
                     'Skor: ${score['team1_score']} - ${score['team2_score']}'),
-                trailing: const Icon(Icons.arrow_forward, color: Colors.white),
+                trailing:
+                const Icon(Icons.arrow_forward, color: Colors.blueAccent),
                 onTap: () {
                   Navigator.push(
                     context,

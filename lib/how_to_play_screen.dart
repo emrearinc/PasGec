@@ -6,49 +6,61 @@ class HowToPlayScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true, // AppBar'ın içerikten bağımsız görünmesini sağlar
       appBar: AppBar(
-        title: const Text('Nasıl Oynanır?'),
-        backgroundColor: Colors.deepPurple,
+        title: const Text(
+          'Nasıl Oynanır?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent, // Şeffaf AppBar
         foregroundColor: Colors.white,
+        elevation: 0, // Ayrım çizgisini kaldırır
       ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.pinkAccent],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFF7F50), Color(0xFFFF4500), Color(0xFFFFD700)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 50.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Tabu Oyunu Kuralları',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              const SizedBox(height: 20),
+              Expanded(
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 0.9,
+                  children: [
+                    _buildRuleCard(
+                      '1. Takımlar',
+                      'Oyuncular iki takıma ayrılır. Her takım sırayla kelime anlatır.',
+                      Colors.deepPurple,
+                    ),
+                    _buildRuleCard(
+                      '2. Süre Dolmadan',
+                      'Her turda takım, süre dolmadan olabildiğince çok kelime anlatır.',
+                      Colors.blue,
+                    ),
+                    _buildRuleCard(
+                      '3. Yasaklı Kelimeler',
+                      'Yasaklı kelimelerden birini kullanmak -1 puana neden olur.',
+                      Colors.redAccent,
+                    ),
+                    _buildRuleCard(
+                      '4. Puanlama',
+                      'Doğru tahmin için +1 puan, yasaklı kelime kullanımı için -1 puan verilir.',
+                      Colors.green,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 20),
-              _buildRuleCard(
-                '1. Oyuncular iki takıma ayrılır.',
-                'Bir takım, diğer takıma kelimeyi tarif ederken yasaklı kelimeleri kullanmaktan kaçınmalıdır.',
-              ),
-              const SizedBox(height: 10),
-              _buildRuleCard(
-                '2. Süre Dolmadan Anlat',
-                'Her turda, takım üyeleri süre dolmadan mümkün olduğunca çok kelime anlatmaya çalışır.',
-              ),
-              const SizedBox(height: 10),
-              _buildRuleCard(
-                '3. Puanlama',
-                'Her doğru tahmin için 1 puan kazanılır. Yasaklı kelimelerden birini kullanmak -1 puan cezası getirir.',
-              ),
-              const SizedBox(height: 30),
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
@@ -59,8 +71,9 @@ class HowToPlayScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
-                  backgroundColor: Colors.deepPurpleAccent,
+                  padding:
+                  const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
+                  backgroundColor: Colors.pinkAccent,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -75,15 +88,26 @@ class HowToPlayScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRuleCard(String title, String description) {
+  Widget _buildRuleCard(String title, String description, Color color) {
     return Card(
       elevation: 8,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
-          color: Colors.white,
+          gradient: LinearGradient(
+            colors: [color.withOpacity(0.7), Colors.white],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 8.0,
+              offset: const Offset(2.0, 4.0),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,13 +117,23 @@ class HowToPlayScreen extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.deepPurple,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    blurRadius: 4.0,
+                    color: Colors.black54,
+                    offset: Offset(1.5, 1.5),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 10),
             Text(
               description,
-              style: const TextStyle(fontSize: 16, color: Colors.black87),
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+              ),
             ),
           ],
         ),

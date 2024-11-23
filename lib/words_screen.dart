@@ -3,10 +3,10 @@ import 'dart:developer';
 import 'database_helper.dart';
 
 class WordsScreen extends StatefulWidget {
-  const WordsScreen({super.key}); // Modern key kullanımı
+  const WordsScreen({super.key});
 
   @override
-  State<WordsScreen> createState() => _WordsScreenState(); // Doğru konumlandırma
+  State<WordsScreen> createState() => _WordsScreenState();
 }
 
 class _WordsScreenState extends State<WordsScreen> {
@@ -36,7 +36,7 @@ class _WordsScreenState extends State<WordsScreen> {
 
       final words = await DatabaseHelper().getWords();
 
-      if (!mounted) return; // Widget kaldırılmışsa işlemi durdur
+      if (!mounted) return;
 
       setState(() {
         _words = words;
@@ -44,7 +44,7 @@ class _WordsScreenState extends State<WordsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      if (!mounted) return; // Widget kaldırılmışsa işlemi durdur
+      if (!mounted) return;
 
       setState(() {
         _isLoading = false;
@@ -68,14 +68,14 @@ class _WordsScreenState extends State<WordsScreen> {
       } else {
         final results = await DatabaseHelper().searchWords(query);
 
-        if (!mounted) return; // Widget kaldırılmışsa işlemi durdur
+        if (!mounted) return;
 
         setState(() {
           _filteredWords = results;
         });
       }
     } catch (e) {
-      if (!mounted) return; // Widget kaldırılmışsa işlemi durdur
+      if (!mounted) return;
 
       showDialog(
         context: context,
@@ -100,30 +100,64 @@ class _WordsScreenState extends State<WordsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kelimeler'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _showAddWordDialog,
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50.0),
-          child: Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                hintText: 'Kelime Ara...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.deepPurple, Colors.purpleAccent],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
           ),
         ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.white),
+            onPressed: _showAddWordDialog,
+          ),
+        ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildWordList(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple, Colors.purpleAccent, Colors.blueAccent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10.0),
+              child: TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  hintText: 'Kelime Ara...',
+                  prefixIcon: Icon(Icons.search, color: Colors.deepPurple),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _buildWordList(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -135,7 +169,11 @@ class _WordsScreenState extends State<WordsScreen> {
         children: [
           Text(
             "Toplam Kelime Sayısı: ${_filteredWords.length}",
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(height: 10),
           Expanded(
@@ -149,10 +187,15 @@ class _WordsScreenState extends State<WordsScreen> {
                   elevation: 5,
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   child: ListTile(
-                    leading: Text(
-                      "${index + 1}",
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.deepPurple,
+                      child: Text(
+                        "${index + 1}",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     title: Text(
                       word['word'],
@@ -191,8 +234,8 @@ class _WordsScreenState extends State<WordsScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20)),
           title: const Center(
             child: Text(
               'Yeni Kelime Ekle',
@@ -260,6 +303,7 @@ class _WordsScreenState extends State<WordsScreen> {
       },
     );
   }
+
   void _showEditWordDialog(int id, String initialWord, List<String> initialForbiddenWords) {
     final TextEditingController wordController = TextEditingController(text: initialWord);
     final List<TextEditingController> forbiddenControllers = List.generate(

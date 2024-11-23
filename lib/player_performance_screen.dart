@@ -21,130 +21,151 @@ class PlayerPerformanceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true, // AppBar'ı arka planın bir parçası yap
       appBar: AppBar(
-        title: const Text('Oyuncu Performansları'),
+        title: const Text(
+          'Oyuncu Performansları',
+          style: TextStyle(
+            color: Colors.white, // Beyaz metin rengi
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent, // Şeffaf AppBar
+        elevation: 0, // Gölgeyi kaldır
+        iconTheme: const IconThemeData(color: Colors.white), // İkon rengi
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchPlayerPerformances(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return const Center(child: Text('Veriler alınırken hata oluştu.'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Oyuncu performansı bulunamadı.'));
-          } else {
-            final performances = snapshot.data!;
-            return ListView.builder(
-              padding: const EdgeInsets.all(16.0),
-              itemCount: performances.length,
-              itemBuilder: (context, index) {
-                final performance = performances[index];
-                final teamColor = performance['team_name'] == team1Name
-                    ? Colors.blueAccent
-                    : Colors.redAccent;
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple, Colors.purpleAccent, Colors.indigo],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: fetchPlayerPerformances(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return const Center(child: Text('Veriler alınırken hata oluştu.'));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('Oyuncu performansı bulunamadı.'));
+            } else {
+              final performances = snapshot.data!;
+              return ListView.builder(
+                padding: const EdgeInsets.only(
+                  top: kToolbarHeight + 16.0, // AppBar'ı dikkate alarak üst padding ekle
+                  left: 16.0,
+                  right: 16.0,
+                ),
+                itemCount: performances.length,
+                itemBuilder: (context, index) {
+                  final performance = performances[index];
+                  final teamColor = performance['team_name'] == team1Name
+                      ? Colors.blueAccent
+                      : Colors.redAccent;
 
-                return Card(
-                  elevation: 5,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          teamColor.withOpacity(0.8),
-                          teamColor.withOpacity(0.5),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                  return Card(
+                    elevation: 5,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: Colors.white,
-                                radius: 25,
-                                child: Text(
-                                  performance['player_name'][0].toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                    color: teamColor,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            teamColor.withOpacity(0.8),
+                            teamColor.withOpacity(0.5),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: Colors.white,
+                                  radius: 25,
+                                  child: Text(
+                                    performance['player_name'][0].toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: teamColor,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 15),
-                              Expanded(
-                                child: Text(
-                                  performance['player_name'],
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                const SizedBox(width: 15),
+                                Expanded(
+                                  child: Text(
+                                    performance['player_name'],
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.8),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  performance['team_name'],
-                                  style: TextStyle(
-                                    color: teamColor,
-                                    fontWeight: FontWeight.bold,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.8),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    performance['team_name'],
+                                    style: TextStyle(
+                                      color: teamColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildPerformanceStat(
-                                'Doğru',
-                                performance['correct_count'],
-                                Icons.check_circle,
-                                Colors.green,
-                              ),
-                              _buildPerformanceStat(
-                                'Tabu',
-                                performance['taboo_count'],
-                                Icons.cancel,
-                                Colors.red,
-                              ),
-                              _buildPerformanceStat(
-                                'Pas',
-                                performance['pass_count'],
-                                Icons.skip_next,
-                                Colors.orange,
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _buildPerformanceStat(
+                                  'Doğru',
+                                  performance['correct_count'],
+                                  Icons.check_circle,
+                                  Colors.green,
+                                ),
+                                _buildPerformanceStat(
+                                  'Tabu',
+                                  performance['taboo_count'],
+                                  Icons.cancel,
+                                  Colors.red,
+                                ),
+                                _buildPerformanceStat(
+                                  'Pas',
+                                  performance['pass_count'],
+                                  Icons.skip_next,
+                                  Colors.orange,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-            );
-          }
-        },
+                  );
+                },
+              );
+            }
+          },
+        ),
       ),
     );
   }
