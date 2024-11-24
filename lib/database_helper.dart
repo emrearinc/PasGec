@@ -12,7 +12,6 @@ class DatabaseHelper {
 
   static Database? _database;
 
-
   /// Veritabanı nesnesini döndürür
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -20,16 +19,13 @@ class DatabaseHelper {
     return _database!;
   }
 
-  /// Veritabanını başlatır ve şifreleme anahtarını güvenli bir şekilde saklar
+  /// Veritabanını başlatır
   Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'words_database_encrypted.db');
+    final dbName = 'words_database_encrypted.db';
+    String path = join(await getDatabasesPath(), dbName);
 
-    // Eğer veritabanı dosyası yoksa assets'ten kopyala
-    if (!(await databaseExists(path))) {
-      ByteData data = await rootBundle.load('assets/database/words_database.db');
-      List<int> bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-      await File(path).writeAsBytes(bytes);
-    }
+    // Veritabanını kopyala (eğer yoksa) ve güncelle
+    await _copyDatabaseIfNotExists(dbName);
 
     return await openDatabase(
       path,
@@ -39,23 +35,36 @@ class DatabaseHelper {
     );
   }
 
-  /// Şifreleme anahtarı oluşturucu
-  String _generateEncryptionKey() {
-    return List.generate(32, (index) => String.fromCharCode(33 + index % 94)).join();
+  /// Veritabanını assets klasöründen kopyalar
+  Future<void> _copyDatabaseIfNotExists(String dbName) async {
+    final databasePath = await getDatabasesPath();
+    final path = join(databasePath, dbName);
+
+    // Eğer veritabanı yoksa assets'ten kopyala
+    if (!await databaseExists(path)) {
+      ByteData data = await rootBundle.load('assets/database/$dbName');
+      List<int> bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+      await File(path).writeAsBytes(bytes, flush: true);
+    }
   }
 
-  /// Veritabanı oluşturma işlemleri
+  /// Veritabanını oluşturma işlemleri
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS words (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         word TEXT NOT NULL,
         forbidden_words TEXT NOT NULL,
-        category TEXT DEFAULT "General",
+        category TEXT DEFAULT 'General',
         difficulty TEXT DEFAULT 'easy'
       )
     ''');
-
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS jokers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message TEXT NOT NULL
+      )
+    ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS game_records (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,7 +75,6 @@ class DatabaseHelper {
         date TEXT NOT NULL
       )
     ''');
-
     await db.execute('''
       CREATE TABLE IF NOT EXISTS player_performances (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,18 +87,11 @@ class DatabaseHelper {
         FOREIGN KEY (game_id) REFERENCES game_records (id) ON DELETE CASCADE
       )
     ''');
-
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS jokers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        message TEXT NOT NULL
-      )
-    ''');
   }
 
-  /// Veritabanı güncelleme işlemleri
+  /// Veritabanı güncellemeleri
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 5) {
+    if (oldVersion < 2) {
       await db.execute('''
         CREATE TABLE IF NOT EXISTS jokers (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,82 +99,45 @@ class DatabaseHelper {
         )
       ''');
     }
-
-    if (oldVersion < 6) {
+    if (oldVersion < 3) {
       await db.execute('''
-        CREATE TEMPORARY TABLE words_backup AS SELECT * FROM words;
+        ALTER TABLE words ADD COLUMN category TEXT DEFAULT 'General'
       ''');
-      await db.execute('DROP TABLE IF EXISTS words;');
+    }
+    if (oldVersion < 4) {
       await db.execute('''
-        CREATE TABLE words (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          word TEXT NOT NULL,
-          forbidden_words TEXT NOT NULL,
-          category TEXT DEFAULT "General"
+        ALTER TABLE words ADD COLUMN difficulty TEXT DEFAULT 'easy'
+      ''');
+    }
+  }
+
+  /// Yeni jokerleri mevcut verilerle birleştirir
+  Future<void> mergeJokers(List<Map<String, dynamic>> newJokers) async {
+    final db = await database;
+
+    // Mevcut jokerleri kontrol et
+    final existingJokers = await db.query('jokers');
+    final existingMessages = existingJokers.map((joker) => joker['message']).toSet();
+
+    // Yeni jokerlerden sadece olmayanları ekle
+    for (final joker in newJokers) {
+      if (!existingMessages.contains(joker['message'])) {
+        await db.insert(
+          'jokers',
+          {'message': joker['message']},
+          conflictAlgorithm: ConflictAlgorithm.ignore,
         );
-      ''');
-      await db.execute('''
-        INSERT INTO words (id, word, forbidden_words, category)
-        SELECT id, word, forbidden_words, category FROM words_backup;
-      ''');
-      await db.execute('DROP TABLE words_backup;');
-    }
-
-    if (oldVersion < 7) {
-      await db.execute('''
-        ALTER TABLE words ADD COLUMN difficulty TEXT DEFAULT 'easy';
-      ''');
+      }
     }
   }
 
-  // ---------- Joker İşlemleri ----------
-  Future<void> addJoker(String message) async {
-    final db = await database;
-    await db.insert(
-      'jokers',
-      {'message': message},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  Future<List<Map<String, dynamic>>> getJokers() async {
-    final db = await database;
-    return await db.query('jokers');
-  }
-
-  Future<void> updateJoker(int id, String message) async {
-    final db = await database;
-    await db.update(
-      'jokers',
-      {'message': message},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-
-  Future<void> deleteJoker(int id) async {
-    final db = await database;
-    await db.delete('jokers', where: 'id = ?', whereArgs: [id]);
-  }
-
-  // ---------- Kelime İşlemleri ----------
+  /// Kelimeleri getirir
   Future<List<Map<String, dynamic>>> getWords() async {
     final db = await database;
     return await db.query('words');
   }
 
-  Future<void> addWord(String word, List<String> forbiddenWords) async {
-    final db = await database;
-    await db.insert(
-      'words',
-      {
-        'word': word.trim(),
-        'forbidden_words': forbiddenWords.join(', '),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
+  /// Belirli bir kelimeyi arar
   Future<List<Map<String, dynamic>>> searchWords(String query) async {
     final db = await database;
     return await db.query(
@@ -183,6 +147,20 @@ class DatabaseHelper {
     );
   }
 
+  /// Yeni bir kelime ekler
+  Future<void> addWord(String word, List<String> forbiddenWords) async {
+    final db = await database;
+    await db.insert(
+      'words',
+      {
+        'word': word.trim(),
+        'forbidden_words': forbiddenWords.join(', '),
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+  }
+
+  /// Bir kelimeyi günceller
   Future<void> updateWord(int id, String word, List<String> forbiddenWords) async {
     final db = await database;
     await db.update(
@@ -196,12 +174,46 @@ class DatabaseHelper {
     );
   }
 
+  /// Bir kelimeyi siler
   Future<void> deleteWord(int id) async {
     final db = await database;
     await db.delete('words', where: 'id = ?', whereArgs: [id]);
   }
 
-  // ---------- Oyun Kayıt İşlemleri ----------
+  /// Yeni bir joker ekler
+  Future<void> addJoker(String message) async {
+    final db = await database;
+    await db.insert(
+      'jokers',
+      {'message': message},
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+  }
+
+  /// Tüm jokerleri getirir
+  Future<List<Map<String, dynamic>>> getJokers() async {
+    final db = await database;
+    return await db.query('jokers');
+  }
+
+  /// Bir jokeri günceller
+  Future<void> updateJoker(int id, String message) async {
+    final db = await database;
+    await db.update(
+      'jokers',
+      {'message': message},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Bir jokeri siler
+  Future<void> deleteJoker(int id) async {
+    final db = await database;
+    await db.delete('jokers', where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// Yeni bir oyun kaydı ekler
   Future<int> addGameRecord(String team1Name, String team2Name, int team1Score, int team2Score) async {
     final db = await database;
     return await db.insert(
@@ -216,20 +228,15 @@ class DatabaseHelper {
     );
   }
 
+  /// Oyun kayıtlarını getirir
   Future<List<Map<String, dynamic>>> getGameRecords() async {
     final db = await database;
     return await db.query('game_records', orderBy: 'date DESC');
   }
 
-  // ---------- Oyuncu Performansı İşlemleri ----------
+  /// Oyuncu performansı ekler
   Future<void> addPlayerPerformance(
-      int gameId,
-      String teamName,
-      String playerName,
-      int correctCount,
-      int tabooCount,
-      int passCount,
-      ) async {
+      int gameId, String teamName, String playerName, int correctCount, int tabooCount, int passCount) async {
     final db = await database;
     await db.insert(
       'player_performances',
@@ -244,6 +251,7 @@ class DatabaseHelper {
     );
   }
 
+  /// Oyuncu performanslarını getirir
   Future<List<Map<String, dynamic>>> getPlayerPerformances(int gameId) async {
     final db = await database;
     return await db.query(

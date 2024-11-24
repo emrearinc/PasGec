@@ -60,9 +60,7 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       _jokerController.clear();
       await _fetchJokers();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Joker başarıyla eklendi!')),
-        );
+        _showSnackBar('Joker başarıyla eklendi!');
       }
     } else {
       _showErrorDialog('Lütfen joker mesajını giriniz!');
@@ -74,9 +72,7 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       await _dbHelper.updateJoker(id, newMessage.trim());
       await _fetchJokers();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Joker başarıyla güncellendi!')),
-        );
+        _showSnackBar('Joker başarıyla güncellendi!');
       }
     } else {
       _showErrorDialog('Joker mesajı boş olamaz!');
@@ -90,11 +86,18 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       await _dbHelper.deleteJoker(id);
       await _fetchJokers();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Joker başarıyla silindi!')),
-        );
+        _showSnackBar('Joker başarıyla silindi!');
       }
     }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2), // Daha kısa görünüm süresi
+      ),
+    );
   }
 
   Future<void> _showErrorDialog(String message) async {
@@ -145,12 +148,7 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Center(
-            child: Text(
-              'Jokeri Düzenle',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-          ),
+          title: const Text('Jokeri Düzenle'),
           content: TextField(
             controller: editController,
             maxLines: null,
@@ -182,14 +180,20 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Jokerleri Yönet'),
+        title: const Text(
+          'Jokerleri Yönet',
+          style: TextStyle(color: Colors.white), // Başlık metni beyaz
+        ),
+        foregroundColor: Colors.white, // İkonlar beyaz
+        backgroundColor: Colors.deepPurple, // Arka plan rengi
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add, color: Colors.white), // İkon rengi beyaz
             onPressed: _showAddJokerDialog,
           ),
         ],
       ),
+
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -212,7 +216,8 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                    borderRadius:
+                    BorderRadius.all(Radius.circular(10.0)),
                   ),
                 ),
               ),
@@ -242,7 +247,8 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
         final joker = _filteredJokers[index];
         return Card(
           margin: const EdgeInsets.all(8.0),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           elevation: 3,
           color: Colors.white.withOpacity(0.9),
           child: ListTile(
@@ -257,27 +263,20 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.edit, color: Colors.deepPurple),
-                  onPressed: () => _showEditJokerDialog(joker['id'], joker['message']),
+                  onPressed: () =>
+                      _showEditJokerDialog(joker['id'], joker['message']),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () async {
-                    final confirm = await _showConfirmationDialog(
-                        'Bu jokeri silmek istediğinizden emin misiniz?');
-                    if (confirm) {
-                      _deleteJoker(joker['id']);
-                    }
-                  },
+                  onPressed: () => _deleteJoker(joker['id']),
                 ),
               ],
             ),
-            onTap: () => _showEditJokerDialog(joker['id'], joker['message']),
           ),
         );
       },
     );
   }
-
 
   void _showAddJokerDialog() {
     _jokerController.clear();
