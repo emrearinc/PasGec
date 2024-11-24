@@ -23,8 +23,6 @@ class DatabaseHelper {
   Future<Database> _initDatabase() async {
     final dbName = 'words_database.db';  // Şifrelenmemiş veritabanı ismi
     String path = join(await getDatabasesPath(), 'words_database.db');
-    print('Database Path: $path');
-
     // Veritabanını kopyala (eğer yoksa) ve güncelle
     await _copyDatabaseIfNotExists(dbName);
 

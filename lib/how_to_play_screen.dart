@@ -6,16 +6,16 @@ class HowToPlayScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true, // AppBar'ın içerikten bağımsız görünmesini sağlar
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text(
           'Nasıl Oynanır?',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        backgroundColor: Colors.transparent, // Şeffaf AppBar
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
-        elevation: 0, // Ayrım çizgisini kaldırır
+        elevation: 0,
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -26,59 +26,67 @@ class HowToPlayScreen extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 50.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+          child: ListView(
             children: [
               const SizedBox(height: 20),
-              Expanded(
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 0.9,
-                  children: [
-                    _buildRuleCard(
-                      '1. Takımlar',
-                      'Oyuncular iki takıma ayrılır. Her takım sırayla kelime anlatır.',
-                      Colors.deepPurple,
-                    ),
-                    _buildRuleCard(
-                      '2. Süre Dolmadan',
-                      'Her turda takım, süre dolmadan olabildiğince çok kelime anlatır.',
-                      Colors.blue,
-                    ),
-                    _buildRuleCard(
-                      '3. Yasaklı Kelimeler',
-                      'Yasaklı kelimelerden birini kullanmak -1 puana neden olur.',
-                      Colors.redAccent,
-                    ),
-                    _buildRuleCard(
-                      '4. Puanlama',
-                      'Doğru tahmin için +1 puan, yasaklı kelime kullanımı için -1 puan verilir.',
-                      Colors.green,
-                    ),
-                  ],
-                ),
+              _buildSectionTitle('🎯 Tabu Oyunu Nedir?'),
+              _buildText(
+                'Tabu, kelime tahmini ve ekip oyunu üzerine kurulu, eğlenceli bir grup oyunudur. Amacınız, takım arkadaşlarınıza belirli bir kelimeyi yasaklı kelimeleri kullanmadan tahmin ettirmek.',
               ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                icon: const Icon(Icons.arrow_back),
-                label: const Text(
-                  'Ana Menüye Dön',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  padding:
-                  const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
-                  backgroundColor: Colors.pinkAccent,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+              const SizedBox(height: 20),
+              _buildSectionTitle('👥 Oyuncu Sayısı'),
+              _buildText(
+                'En az 4 kişi ile oynanır. Oyuncular iki veya daha fazla takıma ayrılır. Her takımda eşit sayıda kişi olmasına dikkat edin.',
+              ),
+              const SizedBox(height: 20),
+              _buildSectionTitle('📱 Ekran Özellikleri'),
+              _buildText(
+                '1. Takımların skorları ekranın üst kısmında görüntülenir.\n'
+                    '2. Süre, ekranın ortasındaki sayaçla takip edilir.\n'
+                    '3. Kelime kartında ana kelime ve yasaklı kelimeler gösterilir.\n'
+                    '4. Pas, tabu ve doğru tahmin için özel butonlar bulunur.',
+              ),
+              const SizedBox(height: 20),
+              _buildSectionTitle('📜 Kurallar ve Skorlama'),
+              _buildText(
+                '✔ **Doğru Tahmin**: +1 puan\n'
+                    '❌ **Yasaklı Kelime Kullanımı**: -1 puan\n'
+                    '⏭ **Pas Geçme**: -1 puan\n\n'
+                    'Süre dolduğunda sıra diğer takıma geçer. Oyuncular, tahminleri hızlı ve yaratıcı bir şekilde yapmaya çalışmalıdır.',
+              ),
+              const SizedBox(height: 20),
+              _buildSectionTitle('🏆 Oyun Nasıl Kazanılır?'),
+              _buildText(
+                'Belirlenen hedef puana ilk ulaşan takım oyunu kazanır. Eğer takımlar eşit puana sahipse, kazananı belirlemek için ek bir tur oynatılabilir.',
+              ),
+              const SizedBox(height: 20),
+              _buildSectionTitle('💡 İpuçları ve Taktikler'),
+              _buildText(
+                '1. Soyut ifadelerle kelimeyi anlatmaya çalışın. Örneğin, "Kedi" kelimesi için "Evcil, bağımsız bir hayvan" diyebilirsiniz.\n'
+                    '2. Takım üyeleri dikkatlice dinlemeli ve hızlı tahmin yapmalıdır.\n'
+                    '3. Rahat bir ortamda oynayın ve eğlenmeye odaklanın!',
+              ),
+              const SizedBox(height: 40),
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text(
+                    'Ana Menüye Dön',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  elevation: 10,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
+                    backgroundColor: Colors.pinkAccent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 10,
+                  ),
                 ),
               ),
             ],
@@ -88,55 +96,34 @@ class HowToPlayScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRuleCard(String title, String description, Color color) {
-    return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        padding: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [color.withOpacity(0.7), Colors.white],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 8.0,
-              offset: const Offset(2.0, 4.0),
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          shadows: [
+            Shadow(
+              blurRadius: 4.0,
+              color: Colors.black54,
+              offset: Offset(1.5, 1.5),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                shadows: [
-                  Shadow(
-                    blurRadius: 4.0,
-                    color: Colors.black54,
-                    offset: Offset(1.5, 1.5),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              description,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
+      ),
+    );
+  }
+
+  Widget _buildText(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 16,
+        color: Colors.white,
+        height: 1.5,
       ),
     );
   }

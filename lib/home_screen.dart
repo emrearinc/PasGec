@@ -199,7 +199,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   void _navigateToScreen(int index) {
     switch (index) {
-      case 0:
+      case 0: // Oyuna Başla
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -214,31 +214,36 @@ class HomeScreenState extends State<HomeScreen> {
           ),
         );
         break;
-      case 1:
+      case 1: // Ayarlar
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const SettingsScreen()),
-        );
+          MaterialPageRoute(
+            builder: (context) => const SettingsScreen(),
+          ),
+        ).then((value) {
+          // Ayarlardan döndükten sonra ayarları yeniden yükle
+          _loadSettings();
+        });
         break;
-      case 2:
+      case 2: // Kelimeleri Yönet
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const WordsScreen()),
         );
         break;
-      case 3:
+      case 3: // Nasıl Oynanır
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const HowToPlayScreen()),
         );
         break;
-      case 4:
+      case 4: // Skorlar
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ScoresScreen()),
         );
         break;
-      case 5:
+      case 5: // Jokerleri Yönet
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const JokerManagementScreen()),
