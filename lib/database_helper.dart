@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:sqflite_sqlcipher/sqflite.dart'; // Şifrelenmiş veritabanı
+import 'package:sqflite/sqflite.dart';  // Şifrelenmemiş SQLite
 import 'package:path/path.dart';
 import 'package:flutter/services.dart';
 
@@ -21,15 +21,16 @@ class DatabaseHelper {
 
   /// Veritabanını başlatır
   Future<Database> _initDatabase() async {
-    final dbName = 'words_database_encrypted.db';
-    String path = join(await getDatabasesPath(), dbName);
+    final dbName = 'words_database.db';  // Şifrelenmemiş veritabanı ismi
+    String path = join(await getDatabasesPath(), 'words_database.db');
+    print('Database Path: $path');
 
     // Veritabanını kopyala (eğer yoksa) ve güncelle
     await _copyDatabaseIfNotExists(dbName);
 
     return await openDatabase(
       path,
-      version: 7,
+      version: 9,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -40,7 +41,7 @@ class DatabaseHelper {
     final databasePath = await getDatabasesPath();
     final path = join(databasePath, dbName);
 
-    // Eğer veritabanı yoksa assets'ten kopyala
+    // Eğer veritabanı yoksa veya eski bir dosya varsa kopyala
     if (!await databaseExists(path)) {
       ByteData data = await rootBundle.load('assets/database/$dbName');
       List<int> bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
@@ -48,9 +49,10 @@ class DatabaseHelper {
     }
   }
 
+
   /// Veritabanını oluşturma işlemleri
   Future<void> _onCreate(Database db, int version) async {
-    await db.execute('''
+    await db.execute(''' 
       CREATE TABLE IF NOT EXISTS words (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         word TEXT NOT NULL,
@@ -59,13 +61,13 @@ class DatabaseHelper {
         difficulty TEXT DEFAULT 'easy'
       )
     ''');
-    await db.execute('''
+    await db.execute(''' 
       CREATE TABLE IF NOT EXISTS jokers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         message TEXT NOT NULL
       )
     ''');
-    await db.execute('''
+    await db.execute(''' 
       CREATE TABLE IF NOT EXISTS game_records (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         team1_name TEXT NOT NULL,
@@ -75,7 +77,7 @@ class DatabaseHelper {
         date TEXT NOT NULL
       )
     ''');
-    await db.execute('''
+    await db.execute(''' 
       CREATE TABLE IF NOT EXISTS player_performances (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         game_id INTEGER NOT NULL,
@@ -92,7 +94,7 @@ class DatabaseHelper {
   /// Veritabanı güncellemeleri
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      await db.execute('''
+      await db.execute(''' 
         CREATE TABLE IF NOT EXISTS jokers (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           message TEXT NOT NULL
@@ -100,14 +102,109 @@ class DatabaseHelper {
       ''');
     }
     if (oldVersion < 3) {
-      await db.execute('''
+      await db.execute(''' 
         ALTER TABLE words ADD COLUMN category TEXT DEFAULT 'General'
       ''');
     }
     if (oldVersion < 4) {
-      await db.execute('''
+      await db.execute(''' 
         ALTER TABLE words ADD COLUMN difficulty TEXT DEFAULT 'easy'
       ''');
+    }
+    if (oldVersion < 5) {
+      // Eski joker verilerini yedekle
+      final List<Map<String, dynamic>> existingJokers = await db.query(
+          'jokers');
+
+      // Jokers tablosunu yeniden oluştur
+      await db.execute('DROP TABLE IF EXISTS jokers');
+      await db.execute('''
+      CREATE TABLE jokers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message TEXT NOT NULL
+      )
+    ''');
+
+      // Eski joker verilerini yeni tabloya ekle
+      for (final joker in existingJokers) {
+        await db.insert('jokers', joker);
+      }
+    }
+    if (oldVersion < 6) {
+      // Eski joker verilerini yedekle
+      final List<Map<String, dynamic>> existingJokers = await db.query(
+          'jokers');
+
+      // Jokers tablosunu yeniden oluştur
+      await db.execute('DROP TABLE IF EXISTS jokers');
+      await db.execute('''
+      CREATE TABLE jokers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message TEXT NOT NULL
+      )
+    ''');
+
+      // Eski joker verilerini yeni tabloya ekle
+      for (final joker in existingJokers) {
+        await db.insert('jokers', joker);
+      }
+    }
+    if (oldVersion < 7) {
+      // Eski joker verilerini yedekle
+      final List<Map<String, dynamic>> existingJokers = await db.query(
+          'jokers');
+
+      // Jokers tablosunu yeniden oluştur
+      await db.execute('DROP TABLE IF EXISTS jokers');
+      await db.execute('''
+      CREATE TABLE jokers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message TEXT NOT NULL
+      )
+    ''');
+
+      // Eski joker verilerini yeni tabloya ekle
+      for (final joker in existingJokers) {
+        await db.insert('jokers', joker);
+      }
+    }
+    if (oldVersion < 8) {
+      // Eski joker verilerini yedekle
+      final List<Map<String, dynamic>> existingJokers = await db.query(
+          'jokers');
+
+      // Jokers tablosunu yeniden oluştur
+      await db.execute('DROP TABLE IF EXISTS jokers');
+      await db.execute('''
+      CREATE TABLE jokers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message TEXT NOT NULL
+      )
+    ''');
+
+      // Eski joker verilerini yeni tabloya ekle
+      for (final joker in existingJokers) {
+        await db.insert('jokers', joker);
+      }
+    }
+    if (oldVersion < 9) {
+      // Eski joker verilerini yedekle
+      final List<Map<String, dynamic>> existingJokers = await db.query(
+          'jokers');
+
+      // Jokers tablosunu yeniden oluştur
+      await db.execute('DROP TABLE IF EXISTS jokers');
+      await db.execute('''
+      CREATE TABLE jokers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message TEXT NOT NULL
+      )
+    ''');
+
+      // Eski joker verilerini yeni tabloya ekle
+      for (final joker in existingJokers) {
+        await db.insert('jokers', joker);
+      }
     }
   }
 

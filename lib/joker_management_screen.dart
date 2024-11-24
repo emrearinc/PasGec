@@ -241,6 +241,15 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
   }
 
   Widget _buildJokerList() {
+    if (_filteredJokers.isEmpty) {
+      // Joker listesi boş olduğunda gösterilecek mesaj
+      return Center(
+        child: Text(
+          'Hiç joker bulunamadı.',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+      );
+    }
     return ListView.builder(
       itemCount: _filteredJokers.length,
       itemBuilder: (context, index) {

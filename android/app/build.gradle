@@ -19,7 +19,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.asda" // Benzersiz Application ID
+        applicationId = "com.example.pasgec" // Benzersiz Application ID
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

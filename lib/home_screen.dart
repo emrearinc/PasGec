@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:package_info_plus/package_info_plus.dart'; // Versiyon bilgisi için
 import 'team_selection_screen.dart';
 import 'settings_screen.dart';
 import 'words_screen.dart';
@@ -22,11 +23,13 @@ class HomeScreenState extends State<HomeScreen> {
   bool _showJokers = true;
   double _jokerProbability = 0.3;
 
+  String _appVersion = ''; // Versiyon bilgisi
+
   @override
   void initState() {
     super.initState();
     _loadSettings();
-
+    _loadAppVersion();
   }
 
   Future<void> _loadSettings() async {
@@ -41,135 +44,207 @@ class HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> _loadAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _appVersion = 'v${packageInfo.version}+${packageInfo.buildNumber}';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
+    int crossAxisCount = screenWidth > 600 ? 3 : 2;
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: SafeArea(
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.deepPurple, Colors.purpleAccent],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        child: Stack(
+          children: [
+            Container(
+              width: double.infinity,
+              height: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF4A148C), // Daha koyu mor
+                    Color(0xFFCE93D8), // Açık mor
+                    Color(0xFFBA68C8), // Orta mor tonu
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: screenHeight * 0.3,
+                      child: Center(
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          width: screenWidth * 0.5,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: GridView.builder(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          childAspectRatio: 1.2,
+                        ),
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: 6,
+                        itemBuilder: (context, index) {
+                          return _buildHomeCard(
+                            label: _getCardLabel(index),
+                            icon: _getCardIcon(index),
+                            color: _getCardColor(index),
+                            onPressed: () {
+                              _navigateToScreen(index);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
             ),
-          ),
-          child: Column(
-            children: [
-              SizedBox(
-                height: screenHeight * 0.3, // Logoya ekranın %30'u ayrıldı
-                child: Center(
-                  child: Image.asset(
-                    'assets/images/logo.png',
-                    width: screenWidth * 0.5, // Dinamik logo boyutu
-                    fit: BoxFit.contain,
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  _appVersion, // Versiyon bilgisi
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.white70,
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.count(
-                    crossAxisCount: 2, // Ekranda her satırda 2 düğme
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 1.2, // Düğme boyut oranı
-                    physics: const NeverScrollableScrollPhysics(), // Kayan ekranı devre dışı bırakır
-                    children: [
-                      _buildHomeCard(
-                        label: 'Oyuna Başla',
-                        icon: Icons.play_arrow,
-                        color: Colors.green,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TeamSelectionScreen(
-                                gameScore: _gameScore,
-                                gameTime: _gameTime,
-                                passLimit: _passLimit,
-                                tabooPenalty: _tabooPenalty,
-                                showJokers: _showJokers,
-                                jokerProbability: _jokerProbability,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildHomeCard(
-                        label: 'Ayarlar',
-                        icon: Icons.settings,
-                        color: Colors.blue,
-                        onPressed: () async {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                          );
-                          if (result != null) {
-                            _loadSettings();
-                          }
-                        },
-                      ),
-                      _buildHomeCard(
-                        label: 'Kelimeleri Yönet',
-                        icon: Icons.list,
-                        color: Colors.orange,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const WordsScreen()),
-                          );
-                        },
-                      ),
-                      _buildHomeCard(
-                        label: 'Nasıl Oynanır',
-                        icon: Icons.info_outline,
-                        color: Colors.pink,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const HowToPlayScreen()),
-                          );
-                        },
-                      ),
-                      _buildHomeCard(
-                        label: 'Skorlar',
-                        icon: Icons.score,
-                        color: Colors.red,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ScoresScreen(), // Parametre gerekmez
-                            ),
-                          );
-                        },
-                      ),
-                      _buildHomeCard(
-                        label: 'Jokerleri Yönet',
-                        icon: Icons.extension,
-                        color: Colors.purple,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const JokerManagementScreen()),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  String _getCardLabel(int index) {
+    switch (index) {
+      case 0:
+        return 'Oyuna Başla';
+      case 1:
+        return 'Ayarlar';
+      case 2:
+        return 'Kelimeleri Yönet';
+      case 3:
+        return 'Nasıl Oynanır';
+      case 4:
+        return 'Skorlar';
+      case 5:
+        return 'Jokerleri Yönet';
+      default:
+        return '';
+    }
+  }
+
+  IconData _getCardIcon(int index) {
+    switch (index) {
+      case 0:
+        return Icons.play_arrow;
+      case 1:
+        return Icons.settings;
+      case 2:
+        return Icons.list;
+      case 3:
+        return Icons.info_outline;
+      case 4:
+        return Icons.score;
+      case 5:
+        return Icons.extension;
+      default:
+        return Icons.help;
+    }
+  }
+
+  Color _getCardColor(int index) {
+    switch (index) {
+      case 0:
+        return Colors.green;
+      case 1:
+        return Colors.blue;
+      case 2:
+        return Colors.orange;
+      case 3:
+        return Colors.pink;
+      case 4:
+        return Colors.red;
+      case 5:
+        return Colors.purple;
+      default:
+        return Colors.black;
+    }
+  }
+
+  void _navigateToScreen(int index) {
+    switch (index) {
+      case 0:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TeamSelectionScreen(
+              gameScore: _gameScore,
+              gameTime: _gameTime,
+              passLimit: _passLimit,
+              tabooPenalty: _tabooPenalty,
+              showJokers: _showJokers,
+              jokerProbability: _jokerProbability,
+            ),
+          ),
+        );
+        break;
+      case 1:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const SettingsScreen()),
+        );
+        break;
+      case 2:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const WordsScreen()),
+        );
+        break;
+      case 3:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const HowToPlayScreen()),
+        );
+        break;
+      case 4:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ScoresScreen()),
+        );
+        break;
+      case 5:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const JokerManagementScreen()),
+        );
+        break;
+    }
   }
 
   Widget _buildHomeCard({
@@ -192,7 +267,7 @@ class HomeScreenState extends State<HomeScreen> {
             children: [
               Icon(
                 icon,
-                size: MediaQuery.of(context).size.width * 0.08, // Dinamik ikon boyutu
+                size: MediaQuery.of(context).size.width * 0.08,
                 color: Colors.white,
               ),
               const SizedBox(height: 10),

@@ -48,19 +48,16 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
     String team1Name = _team1Controller.text.trim();
     String team2Name = _team2Controller.text.trim();
 
-    // 1. Takım oyuncularını listeye aktar
     List<String> team1Players = _team1PlayersControllers
         .map((controller) => controller.text.trim())
         .where((player) => player.isNotEmpty)
         .toList();
 
-    // 2. Takım oyuncularını listeye aktar
     List<String> team2Players = _team2PlayersControllers
         .map((controller) => controller.text.trim())
         .where((player) => player.isNotEmpty)
         .toList();
 
-    // Takım ve oyuncu kontrolü
     if (team1Name.isNotEmpty &&
         team2Name.isNotEmpty &&
         team1Players.isNotEmpty &&
@@ -127,6 +124,9 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final padding = screenWidth > 600 ? 32.0 : 16.0;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Takım Seçimi'),
@@ -134,23 +134,30 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
         foregroundColor: Colors.white,
       ),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.pinkAccent],
+            colors: [
+              Color(0xFF6A1B9A), // Koyu mor
+              Color(0xFF8E24AA), // Orta mor
+              Color(0xFFAB47BC), // Açık mor
+              Color(0xFFE1BEE7), // Çok açık mor
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(padding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                _buildTeamCard('1. Takım Bilgileri', _team1Controller, _team1PlayersControllers),
+                _buildTeamCard('1. Takım Bilgileri', _team1Controller, _team1PlayersControllers, screenWidth),
                 const SizedBox(height: 20),
-                _buildTeamCard('2. Takım Bilgileri', _team2Controller, _team2PlayersControllers),
+                _buildTeamCard('2. Takım Bilgileri', _team2Controller, _team2PlayersControllers, screenWidth),
                 const SizedBox(height: 30),
                 Center(
                   child: ElevatedButton.icon(
@@ -161,7 +168,10 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
+                      padding: EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: screenWidth > 600 ? 60 : 40,
+                      ),
                       backgroundColor: Colors.deepPurpleAccent,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
@@ -178,38 +188,70 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
       ),
     );
   }
+  Widget _buildPlayerInputsColumn(
+      String labelPrefix, List<TextEditingController> controllers, double screenWidth) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: List.generate(controllers.length, (index) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6.0), // Daha yakın yerleşim
+          child: TextField(
+            controller: controllers[index],
+            style: const TextStyle(
+              color: Colors.deepPurple,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+            decoration: InputDecoration(
+              labelText: '$labelPrefix ${index + 1}',
+              labelStyle: const TextStyle(
+                color: Colors.deepPurple,
+                fontWeight: FontWeight.bold,
+              ),
+              filled: true,
+              fillColor: Colors.deepPurple.shade50,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.deepPurple),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.deepPurpleAccent, width: 2),
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
 
   Widget _buildTeamCard(
-      String title, TextEditingController teamController, List<TextEditingController> playerControllers) {
+      String title, TextEditingController teamController, List<TextEditingController> playerControllers, double screenWidth) {
     return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      shadowColor: Colors.black38,
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple.shade100, Colors.white],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.deepPurpleAccent, width: 1.5), // Dış çerçeve
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.deepPurple,
               ),
             ),
             const SizedBox(height: 10),
             _buildTeamNameInput('Takım Adı', teamController),
-            const SizedBox(height: 10),
-            ..._buildPlayerInputs('Oyuncu ', playerControllers),
+            const SizedBox(height: 20),
+            _buildPlayerInputsColumn('Oyuncu', playerControllers, screenWidth), // Kolon yerleşimi
           ],
         ),
       ),
@@ -262,13 +304,5 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
         ),
       ),
     );
-  }
-
-  List<Widget> _buildPlayerInputs(String labelPrefix, List<TextEditingController> controllers) {
-    return controllers
-        .asMap()
-        .entries
-        .map((entry) => _buildPlayerInput('$labelPrefix ${entry.key + 1}', entry.value))
-        .toList();
   }
 }

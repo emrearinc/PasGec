@@ -20,6 +20,7 @@ dependencies:
   shared_preferences: ^2.2.0 # Mevcut en son sürümü kullanın
   sqflite_sqlcipher: ^2.0.0 # En güncel sürümü kullanın
   flutter_secure_storage: ^9.0.0
+  package_info_plus: ^8.1.1 # En güncel sürümünü kontrol edin
 
 dev_dependencies:
   flutter_test:

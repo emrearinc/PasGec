@@ -11,6 +11,7 @@ class ScoresScreen extends StatefulWidget {
 
 class ScoresScreenState extends State<ScoresScreen> {
   List<Map<String, dynamic>> scores = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -23,6 +24,7 @@ class ScoresScreenState extends State<ScoresScreen> {
     final data = await db.getGameRecords(); // Veritabanından oyun kayıtlarını getir
     setState(() {
       scores = data;
+      isLoading = false;
     });
   }
 
@@ -48,9 +50,20 @@ class ScoresScreenState extends State<ScoresScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: scores.isEmpty
+        child: isLoading
             ? const Center(
           child: CircularProgressIndicator(),
+        )
+            : scores.isEmpty
+            ? Center(
+          child: Text(
+            'Hiç skor bulunamadı.',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         )
             : ListView.builder(
           padding: const EdgeInsets.only(
@@ -84,8 +97,8 @@ class ScoresScreenState extends State<ScoresScreen> {
                 ),
                 subtitle: Text(
                     'Skor: ${score['team1_score']} - ${score['team2_score']}'),
-                trailing:
-                const Icon(Icons.arrow_forward, color: Colors.blueAccent),
+                trailing: const Icon(Icons.arrow_forward,
+                    color: Colors.blueAccent),
                 onTap: () {
                   Navigator.push(
                     context,
