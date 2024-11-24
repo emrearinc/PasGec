@@ -34,9 +34,19 @@ class _WordsScreenState extends State<WordsScreen> {
         _isLoading = true;
       });
 
-      final words = await DatabaseHelper().getWords();
+      // Veritabanından kelimeleri al
+      final List<Map<String, dynamic>> words = await DatabaseHelper().getWords();
 
-      if (!mounted) return;
+      if (words.isEmpty) {
+        // Eğer tablo boşsa kullanıcıya uyarı göster
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Veritabanında kelime bulunamadı!'),
+            ),
+          );
+        }
+      }
 
       setState(() {
         _words = words;
@@ -44,17 +54,17 @@ class _WordsScreenState extends State<WordsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      if (!mounted) return;
-
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Kelimeler alınırken hata oluştu: $e'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      // Hata durumunda kullanıcıyı bilgilendir
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kelimeler alınırken hata oluştu: $e'),
+          ),
+        );
+      }
     }
   }
 

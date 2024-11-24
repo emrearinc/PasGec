@@ -84,6 +84,35 @@ class SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Center( // "Kaydet ve Çık" butonunu ortala
+                  child: ElevatedButton(
+                    onPressed: _saveSettingsAndExit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.lime,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: 14,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.save, size: 20),
+                        SizedBox(width: 8),
+                        Text('Ayarları Kaydet ve Çık'),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30), // Üstte boşluk
                 _buildSectionTitle('Oyun Skoru'),
                 _buildCustomCard(
                   child: Slider(
@@ -199,35 +228,6 @@ class SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                   label: 'Joker Gösterim Ayarları',
-                ),
-                const SizedBox(height: 30),
-                Center(
-                  child: ElevatedButton(
-                    onPressed: _saveSettingsAndExit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 14,
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.save, size: 20),
-                        SizedBox(width: 8),
-                        Text('Ayarları Kaydet ve Çık'),
-                      ],
-                    ),
-                  ),
                 ),
               ],
             ),

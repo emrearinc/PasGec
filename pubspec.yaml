@@ -34,7 +34,7 @@ flutter:
     - assets/sound/timer.MP3
     - assets/sound/pas.MP3
     - assets/sound/dogru.MP3
-    - assets/sound/yanlis.MP3
+    - assets/sound/tabu.MP3
 
   fonts:
     - family: ComicSans

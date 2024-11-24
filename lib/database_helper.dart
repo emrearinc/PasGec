@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Güvenli depolama için
 import 'package:sqflite_sqlcipher/sqflite.dart'; // Şifrelenmiş veritabanı
 import 'package:path/path.dart';
 import 'package:flutter/services.dart';
@@ -13,9 +12,6 @@ class DatabaseHelper {
 
   static Database? _database;
 
-  /// Güvenli depolama için Flutter Secure Storage
-  final _secureStorage = const FlutterSecureStorage();
-  final _dbKey = 'db_encryption_key'; // Şifreleme anahtarı için anahtar adı
 
   /// Veritabanı nesnesini döndürür
   Future<Database> get database async {
@@ -28,14 +24,6 @@ class DatabaseHelper {
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'words_database_encrypted.db');
 
-    // Şifreleme anahtarını kontrol et
-    String? encryptionKey = await _secureStorage.read(key: _dbKey);
-    if (encryptionKey == null) {
-      // Anahtar yoksa yeni bir şifreleme anahtarı oluştur ve sakla
-      encryptionKey = _generateEncryptionKey();
-      await _secureStorage.write(key: _dbKey, value: encryptionKey);
-    }
-
     // Eğer veritabanı dosyası yoksa assets'ten kopyala
     if (!(await databaseExists(path))) {
       ByteData data = await rootBundle.load('assets/database/words_database.db');
@@ -45,8 +33,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 7, // Versiyon numarası burada değişir
-      password: encryptionKey, // Şifreleme anahtarı kullanılır
+      version: 7,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );

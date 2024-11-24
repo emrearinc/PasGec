@@ -55,6 +55,7 @@ class Word {
   final int id;
   final String word;
   final List<String> forbiddenWords;
+  final AudioPlayer audioPlayer = AudioPlayer();
 
   Word({required this.id, required this.word, required this.forbiddenWords});
 
@@ -91,6 +92,17 @@ class GameScreenState extends State<GameScreen> {
 
   List<PlayerPerformance> team1Performances = [];
   List<PlayerPerformance> team2Performances = [];
+  // Ortak ses çalma metodu
+  Future<void> playSound(String assetPath) async {
+    try {
+      developer.log('Ses dosyası çalınmaya çalışıldı: $assetPath');
+      await audioPlayer.stop(); // Mevcut sesi durdur
+      await audioPlayer.play(AssetSource(assetPath)); // Yeni sesi çal
+    } catch (e) {
+      developer.log('Ses çalınırken hata oluştu: $e'); // Hata loglama
+    }
+  }
+
 
   @override
   void initState() {
@@ -179,9 +191,6 @@ class GameScreenState extends State<GameScreen> {
   }
 
 
-
-
-
   @override
   void dispose() {
     timer?.cancel();
@@ -196,7 +205,7 @@ class GameScreenState extends State<GameScreen> {
           timerValue--;
 
           // 10 saniye kaldığında sesi başlat
-          if (timerValue == 10) {
+          if (timerValue == 5) {
             playTimerSound();
           }
         } else if (timerValue == 0 && !isGameOver) {
@@ -256,16 +265,18 @@ class GameScreenState extends State<GameScreen> {
     if (!isPlayingSound) {
       isPlayingSound = true;
       try {
-        await audioPlayer.play(AssetSource('sound/timer.MP3'));
+        await playSound('sound/timer.MP3');
       } catch (e, stackTrace) {
         developer.log(
-          'Ses çalma sırasında hata oluştu',
+          'Zamanlayıcı sesi çalma sırasında hata oluştu',
           error: e,
           stackTrace: stackTrace,
         );
       }
+      isPlayingSound = false; // İşlem tamamlandıktan sonra sıfırla
     }
   }
+
 
   void incrementCorrect() {
     updatePlayerPerformance(getCurrentPlayer(), correct: 1);
@@ -276,6 +287,7 @@ class GameScreenState extends State<GameScreen> {
       } else {
         team2Score++;
       }
+      playSound('sound/dogru.MP3');
       checkWinCondition();
       nextWord();
     });
@@ -291,6 +303,7 @@ class GameScreenState extends State<GameScreen> {
       } else {
         team2Score -= widget.tabooPenalty; // Seçilen tabu cezası kadar puan düş
       }
+      playSound('sound/tabu.MP3');
 
       // Titreşim ekle
       Vibration.vibrate(duration: 500); // 500ms titreşim
@@ -309,6 +322,7 @@ class GameScreenState extends State<GameScreen> {
         passCount++;
         currentPassCount--;
         isPassButtonDisabled = currentPassCount == 0; // Pas hakkı biterse butonu devre dışı bırak
+        playSound('sound/pas.MP3');
 
         nextWord(); // Bir sonraki kelimeye geç
       } else {
@@ -423,7 +437,7 @@ class GameScreenState extends State<GameScreen> {
       }
 
       // 10 saniye kaldıysa sesi yeniden başlat
-      if (timerValue <= 10) {
+      if (timerValue <= 5) {
         playTimerSound();
       }
     }
