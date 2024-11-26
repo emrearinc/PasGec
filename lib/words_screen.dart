@@ -42,7 +42,7 @@ class _WordsScreenState extends State<WordsScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Veritabanında kelime bulunamadı!'),
+              content: Text('Veritabanında kelime bulunamadı!!!'),
             ),
           );
         }
