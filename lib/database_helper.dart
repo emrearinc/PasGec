@@ -153,6 +153,15 @@ class DatabaseHelper {
       whereArgs: [id], // Şart argümanları
     );
   }
+  Future<void> updateJokerStatus(int id, int status) async {
+    final db = await database;
+    await db.update(
+      'jokers',
+      {'is_active': status},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 
 
 

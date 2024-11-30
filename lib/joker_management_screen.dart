@@ -15,6 +15,8 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
   List<Map<String, dynamic>> _jokers = [];
   List<Map<String, dynamic>> _filteredJokers = [];
   bool _isLoading = true;
+  bool _isSelectionMode = false; // Seçim modunun aktif olup olmadığını kontrol eder
+  final List<int> _selectedJokerIds = []; // Seçilen jokerlerin ID'lerini tutar
 
   @override
   void initState() {
@@ -176,24 +178,91 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       },
     );
   }
+  Future<void> _deleteSelectedJokers() async {
+    if (_selectedJokerIds.isEmpty) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Toplu Silme'),
+        content: const Text('Seçilen jokerleri silmek istediğinize emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Hayır'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Evet'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      for (int id in _selectedJokerIds) {
+        await _dbHelper.updateJokerStatus(id, 0); // is_active = 0 yap
+      }
+
+      await _fetchJokers(); // Jokerleri yeniden yükle
+
+      setState(() {
+        _isSelectionMode = false;
+        _selectedJokerIds.clear(); // Seçim listesini temizle
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Seçilen jokerler başarıyla silindi!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Hata oluştu: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Jokerleri Yönet',
-          style: TextStyle(color: Colors.white), // Başlık metni beyaz
+        title: Text(
+          _isSelectionMode
+              ? "${_selectedJokerIds.length} Seçildi"
+              : 'Jokerleri Yönet',
+          style: const TextStyle(color: Colors.white),
         ),
-        foregroundColor: Colors.white, // İkonlar beyaz
-        backgroundColor: Colors.deepPurple, // Arka plan rengi
-        actions: [
+        foregroundColor: Colors.white,
+        backgroundColor: Colors.deepPurple,
+        actions: _isSelectionMode
+            ? [
           IconButton(
-            icon: const Icon(Icons.add, color: Colors.white), // İkon rengi beyaz
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: _selectedJokerIds.isEmpty
+                ? null
+                : () async {
+              await _deleteSelectedJokers();
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.cancel, color: Colors.white),
+            onPressed: () {
+              setState(() {
+                _isSelectionMode = false;
+                _selectedJokerIds.clear();
+              });
+            },
+          ),
+        ]
+            : [
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.white),
             onPressed: _showAddJokerDialog,
           ),
         ],
       ),
+
 
       body: Container(
         decoration: const BoxDecoration(
@@ -243,7 +312,6 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
 
   Widget _buildJokerList() {
     if (_filteredJokers.isEmpty) {
-      // Joker listesi boş olduğunda gösterilecek mesaj
       return Center(
         child: Text(
           'Hiç joker bulunamadı.',
@@ -251,24 +319,43 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
         ),
       );
     }
+
     return ListView.builder(
       itemCount: _filteredJokers.length,
       itemBuilder: (context, index) {
         final joker = _filteredJokers[index];
+        final isSelected = _selectedJokerIds.contains(joker['id']); // Joker seçili mi?
+
         return Card(
           margin: const EdgeInsets.all(8.0),
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           elevation: 3,
-          color: Colors.white.withOpacity(0.9),
+          color: isSelected
+              ? Colors.deepPurple.withOpacity(0.2) // Seçili olan jokerin arka planı
+              : Colors.white.withOpacity(0.9),
           child: ListTile(
+            leading: _isSelectionMode
+                ? Checkbox(
+              value: isSelected,
+              onChanged: (bool? value) {
+                setState(() {
+                  if (value == true) {
+                    _selectedJokerIds.add(joker['id']);
+                  } else {
+                    _selectedJokerIds.remove(joker['id']);
+                  }
+                });
+              },
+            )
+                : null,
             title: Text(
               joker['message'],
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            trailing: Row(
+            trailing: !_isSelectionMode
+                ? Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
@@ -281,7 +368,25 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
                   onPressed: () => _deleteJoker(joker['id']),
                 ),
               ],
-            ),
+            )
+                : null,
+            onTap: () {
+              if (_isSelectionMode) {
+                setState(() {
+                  if (isSelected) {
+                    _selectedJokerIds.remove(joker['id']);
+                  } else {
+                    _selectedJokerIds.add(joker['id']);
+                  }
+                });
+              }
+            },
+            onLongPress: () {
+              setState(() {
+                _isSelectionMode = true;
+                _selectedJokerIds.add(joker['id']);
+              });
+            },
           ),
         );
       },
