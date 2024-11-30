@@ -144,6 +144,16 @@ class DatabaseHelper {
       conflictAlgorithm: ConflictAlgorithm.ignore, // Aynı kelime eklenirse hata vermez
     );
   }
+  Future<void> updateWordIsActive(int id, int isActive) async {
+    final db = await database; // Veritabanını alın
+    await db.update(
+      'words', // Tablo adı
+      {'is_active': isActive}, // Güncellenecek alanlar
+      where: 'id = ?', // Şart
+      whereArgs: [id], // Şart argümanları
+    );
+  }
+
 
 
   /// Belirli bir kelimeyi arar
@@ -151,8 +161,8 @@ class DatabaseHelper {
     final db = await database;
     return await db.query(
       'words',
-      where: 'word LIKE ?',
-      whereArgs: ['%$query%'],
+      where: 'word LIKE ? AND is_active = ?', // Hem kelimeyi hem de aktif durumu kontrol et
+      whereArgs: ['%$query%', 1], // Kelime ve is_active değerlerini filtrele
     );
   }
 

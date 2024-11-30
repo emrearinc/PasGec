@@ -148,16 +148,17 @@ class GameScreenState extends State<GameScreen> {
 
   Future<void> fetchWordsFromDatabase() async {
     try {
-      final dbWords = await DatabaseHelper().getWords();
+      // Sadece aktif kelimeleri getiren bir sorgu
+      final dbWords = await DatabaseHelper().getWords(where: 'is_active = ?', whereArgs: [1]);
 
       if (dbWords.isEmpty && mounted) {
-        // showDialog doğrudan çağrılır
+        // Eğer kelime bulunamazsa bir uyarı göster
         showDialog(
           context: context,
           builder: (context) {
             return AlertDialog(
               title: const Text('Uyarı'),
-              content: const Text('Veritabanında kelime bulunamadı!'),
+              content: const Text('Veritabanında aktif kelime bulunamadı!'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -170,10 +171,9 @@ class GameScreenState extends State<GameScreen> {
       }
 
       List<Word> loadedWords = dbWords.map((map) => Word.fromMap(map)).toList();
-      loadedWords.shuffle(); // Kelimeleri karıştırıyoruz
+      loadedWords.shuffle(); // Kelimeleri karıştır
 
       if (mounted) {
-        // Ekran hala açıkken setState çağrılır
         setState(() {
           words = loadedWords;
         });
@@ -189,6 +189,7 @@ class GameScreenState extends State<GameScreen> {
       }
     }
   }
+
 
 
   @override

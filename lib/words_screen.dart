@@ -14,6 +14,8 @@ class _WordsScreenState extends State<WordsScreen> {
   List<Map<String, dynamic>> _filteredWords = [];
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
+  final List<int> _selectedWordIds = []; // Seçilen kelimelerin ID'lerini tutar
+  bool _isSelectionMode = false; // Seçim modunun aktif olup olmadığını kontrol eder
 
   @override
   void initState() {
@@ -29,16 +31,19 @@ class _WordsScreenState extends State<WordsScreen> {
   }
 
   Future<void> _fetchWords() async {
+    log("Kelimeler yükleniyor...");
     try {
       setState(() {
         _isLoading = true;
       });
 
-      // Sadece is_active = 1 olan kelimeleri getir
       final List<Map<String, dynamic>> words = await DatabaseHelper()
           .getWords(where: 'is_active = ?', whereArgs: [1]);
 
+      log("Kelimeler başarıyla alındı. Kelime sayısı: ${words.length}");
+
       if (words.isEmpty) {
+        log("Veritabanında aktif kelime bulunamadı.");
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -53,7 +58,8 @@ class _WordsScreenState extends State<WordsScreen> {
         _filteredWords = words;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      log("Kelimeler alınırken hata oluştu: $e", stackTrace: stackTrace);
       setState(() {
         _isLoading = false;
       });
@@ -66,6 +72,7 @@ class _WordsScreenState extends State<WordsScreen> {
       }
     }
   }
+
 
   void _onSearchChanged() async {
     try {
@@ -108,7 +115,11 @@ class _WordsScreenState extends State<WordsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kelimeler'),
+        title: Text(
+          _isSelectionMode
+              ? "${_selectedWordIds.length} Seçildi"
+              : 'Kelimeler',
+        ),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -124,15 +135,43 @@ class _WordsScreenState extends State<WordsScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.pop(context);
+            if (_isSelectionMode) {
+              setState(() {
+                _isSelectionMode = false;
+                _selectedWordIds.clear();
+              });
+            } else {
+              Navigator.pop(context);
+            }
           },
         ),
-        actions: [
+        actions: _isSelectionMode
+            ? [
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: _selectedWordIds.isEmpty
+                ? null
+                : () async {
+              await _deleteSelectedWords();
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.cancel, color: Colors.white),
+            onPressed: () {
+              setState(() {
+                _isSelectionMode = false;
+                _selectedWordIds.clear();
+              });
+            },
+          ),
+        ]
+            : [
           IconButton(
             icon: const Icon(Icons.add, color: Colors.white),
             onPressed: _showAddWordDialog,
           ),
         ],
+
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -190,13 +229,28 @@ class _WordsScreenState extends State<WordsScreen> {
               itemCount: _filteredWords.length,
               itemBuilder: (context, index) {
                 final word = _filteredWords[index];
+                final isSelected = _selectedWordIds.contains(word['id']); // Seçili olup olmadığını kontrol et
                 return Card(
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   elevation: 5,
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   child: ListTile(
-                    leading: CircleAvatar(
+                    leading: _isSelectionMode
+                        ? Checkbox(
+                      value: isSelected,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) {
+                            _selectedWordIds.add(word['id']);
+                          } else {
+                            _selectedWordIds.remove(word['id']);
+                          }
+                        });
+                      },
+                    )
+                        : CircleAvatar(
                       backgroundColor: Colors.deepPurple,
                       child: Text(
                         "${index + 1}",
@@ -209,21 +263,44 @@ class _WordsScreenState extends State<WordsScreen> {
                     title: Text(
                       word['word'],
                       style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 18),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                     subtitle: Text(
-                        "Yasaklı Kelimeler: ${word['forbidden_words']}",
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis),
-                    trailing: IconButton(
+                      "Yasaklı Kelimeler: ${word['forbidden_words']}",
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: _isSelectionMode
+                        ? null // Seçim modunda silme butonunu gösterme
+                        : IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () => _deleteWord(word['id']),
                     ),
-                    onTap: () => _showEditWordDialog(
-                      word['id'],
-                      word['word'],
-                      word['forbidden_words']?.split(', ') ?? [],
-                    ),
+                    onTap: () {
+                      if (_isSelectionMode) {
+                        setState(() {
+                          if (isSelected) {
+                            _selectedWordIds.remove(word['id']);
+                          } else {
+                            _selectedWordIds.add(word['id']);
+                          }
+                        });
+                      } else {
+                        _showEditWordDialog(
+                          word['id'],
+                          word['word'],
+                          word['forbidden_words']?.split(', ') ?? [],
+                        );
+                      }
+                    },
+                    onLongPress: () {
+                      setState(() {
+                        _isSelectionMode = true;
+                        _selectedWordIds.add(word['id']); // Uzun basılan kelimeyi seçili yap
+                      });
+                    },
                   ),
                 );
               },
@@ -233,6 +310,55 @@ class _WordsScreenState extends State<WordsScreen> {
       ),
     );
   }
+
+
+  Future<void> _deleteSelectedWords() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Toplu Silme'),
+        content: const Text('Seçilen kelimeleri silmek istediğinize emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Hayır'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Evet'),
+          ),
+        ],
+      ),
+    );
+
+    // Eğer işlem onaylanmadıysa çık
+    if (confirm != true) return;
+
+    try {
+      // Seçilen kelimeleri sil
+      for (int id in _selectedWordIds) {
+        await DatabaseHelper().updateWordIsActive(id, 0); // is_active = 0 yap
+      }
+
+      // Kelimeleri yeniden yükle
+      await _fetchWords();
+
+      setState(() {
+        _isSelectionMode = false;
+        _selectedWordIds.clear(); // Seçim listesini temizle
+      });
+
+      // Kullanıcıya başarı mesajı göster
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Seçilen kelimeler başarıyla silindi!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bir hata oluştu, tekrar deneyin.')),
+      );
+    }
+  }
+
 
   void _showAddWordDialog() {
     final TextEditingController wordController = TextEditingController();
