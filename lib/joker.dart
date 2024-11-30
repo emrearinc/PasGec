@@ -2,18 +2,18 @@ import 'dart:math';
 import 'database_helper.dart';
 
 class Joker {
-  /// Veritabanından rastgele joker mesajı döndürür.
-  static Future<String?> getRandomJoker({double probability = 0.3}) async {
-    final random = Random();
-    if (random.nextDouble() < probability) {
-      final dbHelper = DatabaseHelper();
-      final jokers = await dbHelper.getJokers();
+  /// Veritabanından rastgele aktif joker mesajı döndürür.
+  static Future<String?> getRandomJoker() async {
+    final dbHelper = DatabaseHelper();
 
-      if (jokers.isNotEmpty) {
-        int index = random.nextInt(jokers.length);
-        return jokers[index]['message'];
-      }
+    // Sadece aktif jokerleri getir
+    final activeJokers = await dbHelper.getActiveJokers();
+
+    if (activeJokers.isNotEmpty) {
+      int index = Random().nextInt(activeJokers.length);
+      return activeJokers[index]['message'];
     }
     return null; // Joker gösterilmez
   }
+
 }

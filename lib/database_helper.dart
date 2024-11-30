@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:sqflite/sqflite.dart';  // Şifrelenmemiş SQLite
+import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:flutter/services.dart';
 
@@ -21,14 +21,15 @@ class DatabaseHelper {
 
   /// Veritabanını başlatır
   Future<Database> _initDatabase() async {
-    final dbName = 'words_database.db';  // Şifrelenmemiş veritabanı ismi
-    String path = join(await getDatabasesPath(), 'words_database.db');
-    // Veritabanını kopyala (eğer yoksa) ve güncelle
+    final dbName = 'words_database.db'; // Veritabanı adı
+    String path = join(await getDatabasesPath(), dbName);
+
+    // Eğer veritabanı yoksa, assets'den kopyala
     await _copyDatabaseIfNotExists(dbName);
 
     return await openDatabase(
       path,
-      version: 9,
+      version: 1, // Version 1 olarak başlıyor
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -39,7 +40,6 @@ class DatabaseHelper {
     final databasePath = await getDatabasesPath();
     final path = join(databasePath, dbName);
 
-    // Eğer veritabanı yoksa veya eski bir dosya varsa kopyala
     if (!await databaseExists(path)) {
       ByteData data = await rootBundle.load('assets/database/$dbName');
       List<int> bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
@@ -47,26 +47,33 @@ class DatabaseHelper {
     }
   }
 
-
   /// Veritabanını oluşturma işlemleri
   Future<void> _onCreate(Database db, int version) async {
+    // Kelimeler tablosu
     await db.execute(''' 
-      CREATE TABLE IF NOT EXISTS words (
+  CREATE TABLE IF NOT EXISTS words (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         word TEXT NOT NULL,
         forbidden_words TEXT NOT NULL,
-        category TEXT DEFAULT 'General',
-        difficulty TEXT DEFAULT 'easy'
+        category TEXT DEFAULT 'Genel',
+        is_active INTEGER DEFAULT 1,
+        created_by TEXT DEFAULT 1
       )
     ''');
+
+    // Jokerler tablosu
     await db.execute(''' 
       CREATE TABLE IF NOT EXISTS jokers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        message TEXT NOT NULL
+        message TEXT NOT NULL,
+        is_active INTEGER DEFAULT 1,
+        created_by TEXT DEFAULT 1
       )
     ''');
+
+    // Oyun kayıtları tablosu
     await db.execute(''' 
-      CREATE TABLE IF NOT EXISTS game_records (
+    CREATE TABLE IF NOT EXISTS game_records (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         team1_name TEXT NOT NULL,
         team2_name TEXT NOT NULL,
@@ -75,6 +82,8 @@ class DatabaseHelper {
         date TEXT NOT NULL
       )
     ''');
+
+    // Oyuncu performansları tablosu
     await db.execute(''' 
       CREATE TABLE IF NOT EXISTS player_performances (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,146 +100,51 @@ class DatabaseHelper {
 
   /// Veritabanı güncellemeleri
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    // Yeni versiyonlara geçişte yapılacak işlemler
     if (oldVersion < 2) {
-      await db.execute(''' 
-        CREATE TABLE IF NOT EXISTS jokers (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          message TEXT NOT NULL
-        )
-      ''');
-    }
-    if (oldVersion < 3) {
-      await db.execute(''' 
-        ALTER TABLE words ADD COLUMN category TEXT DEFAULT 'General'
-      ''');
-    }
-    if (oldVersion < 4) {
-      await db.execute(''' 
-        ALTER TABLE words ADD COLUMN difficulty TEXT DEFAULT 'easy'
-      ''');
-    }
-    if (oldVersion < 5) {
-      // Eski joker verilerini yedekle
-      final List<Map<String, dynamic>> existingJokers = await db.query(
-          'jokers');
-
-      // Jokers tablosunu yeniden oluştur
-      await db.execute('DROP TABLE IF EXISTS jokers');
-      await db.execute('''
-      CREATE TABLE jokers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        message TEXT NOT NULL
-      )
-    ''');
-
-      // Eski joker verilerini yeni tabloya ekle
-      for (final joker in existingJokers) {
-        await db.insert('jokers', joker);
-      }
-    }
-    if (oldVersion < 6) {
-      // Eski joker verilerini yedekle
-      final List<Map<String, dynamic>> existingJokers = await db.query(
-          'jokers');
-
-      // Jokers tablosunu yeniden oluştur
-      await db.execute('DROP TABLE IF EXISTS jokers');
-      await db.execute('''
-      CREATE TABLE jokers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        message TEXT NOT NULL
-      )
-    ''');
-
-      // Eski joker verilerini yeni tabloya ekle
-      for (final joker in existingJokers) {
-        await db.insert('jokers', joker);
-      }
-    }
-    if (oldVersion < 7) {
-      // Eski joker verilerini yedekle
-      final List<Map<String, dynamic>> existingJokers = await db.query(
-          'jokers');
-
-      // Jokers tablosunu yeniden oluştur
-      await db.execute('DROP TABLE IF EXISTS jokers');
-      await db.execute('''
-      CREATE TABLE jokers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        message TEXT NOT NULL
-      )
-    ''');
-
-      // Eski joker verilerini yeni tabloya ekle
-      for (final joker in existingJokers) {
-        await db.insert('jokers', joker);
-      }
-    }
-    if (oldVersion < 8) {
-      // Eski joker verilerini yedekle
-      final List<Map<String, dynamic>> existingJokers = await db.query(
-          'jokers');
-
-      // Jokers tablosunu yeniden oluştur
-      await db.execute('DROP TABLE IF EXISTS jokers');
-      await db.execute('''
-      CREATE TABLE jokers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        message TEXT NOT NULL
-      )
-    ''');
-
-      // Eski joker verilerini yeni tabloya ekle
-      for (final joker in existingJokers) {
-        await db.insert('jokers', joker);
-      }
-    }
-    if (oldVersion < 9) {
-      // Eski joker verilerini yedekle
-      final List<Map<String, dynamic>> existingJokers = await db.query(
-          'jokers');
-
-      // Jokers tablosunu yeniden oluştur
-      await db.execute('DROP TABLE IF EXISTS jokers');
-      await db.execute('''
-      CREATE TABLE jokers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        message TEXT NOT NULL
-      )
-    ''');
-
-      // Eski joker verilerini yeni tabloya ekle
-      for (final joker in existingJokers) {
-        await db.insert('jokers', joker);
-      }
+      // Gelecek versiyon güncellemeleri buraya eklenir
     }
   }
 
-  /// Yeni jokerleri mevcut verilerle birleştirir
-  Future<void> mergeJokers(List<Map<String, dynamic>> newJokers) async {
+  /// Genel CRUD işlemleri (Tablo bazlı)
+  Future<int> insert(String table, Map<String, dynamic> values) async {
     final db = await database;
-
-    // Mevcut jokerleri kontrol et
-    final existingJokers = await db.query('jokers');
-    final existingMessages = existingJokers.map((joker) => joker['message']).toSet();
-
-    // Yeni jokerlerden sadece olmayanları ekle
-    for (final joker in newJokers) {
-      if (!existingMessages.contains(joker['message'])) {
-        await db.insert(
-          'jokers',
-          {'message': joker['message']},
-          conflictAlgorithm: ConflictAlgorithm.ignore,
-        );
-      }
-    }
+    return await db.insert(table, values, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  /// Kelimeleri getirir
-  Future<List<Map<String, dynamic>>> getWords() async {
+  Future<List<Map<String, dynamic>>> query(String table, {String? where, List<Object?>? whereArgs, String? orderBy}) async {
     final db = await database;
-    return await db.query('words');
+    return await db.query(table, where: where, whereArgs: whereArgs, orderBy: orderBy);
   }
+
+  Future<int> update(String table, Map<String, dynamic> values, {String? where, List<Object?>? whereArgs}) async {
+    final db = await database;
+    return await db.update(table, values, where: where, whereArgs: whereArgs);
+  }
+
+  Future<int> delete(String table, {String? where, List<Object?>? whereArgs}) async {
+    final db = await database;
+    return await db.delete(table, where: where, whereArgs: whereArgs);
+  }
+
+  /// Kelimeler ile ilgili işlemler
+  Future<List<Map<String, dynamic>>> getWords({String? where, List<Object?>? whereArgs}) async {
+    return await query('words', where: where, whereArgs: whereArgs);
+  }
+
+  Future<void> addWord(String word, List<String> forbiddenWords) async {
+    final db = await database;
+    await db.insert(
+      'words',
+      {
+        'word': word.trim(),
+        'forbidden_words': forbiddenWords.join(', '),
+        'created_by': 2, // Yeni eklenen kelime için created_by alanını 2 yap
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore, // Aynı kelime eklenirse hata vermez
+    );
+  }
+
 
   /// Belirli bir kelimeyi arar
   Future<List<Map<String, dynamic>>> searchWords(String query) async {
@@ -242,20 +156,6 @@ class DatabaseHelper {
     );
   }
 
-  /// Yeni bir kelime ekler
-  Future<void> addWord(String word, List<String> forbiddenWords) async {
-    final db = await database;
-    await db.insert(
-      'words',
-      {
-        'word': word.trim(),
-        'forbidden_words': forbiddenWords.join(', '),
-      },
-      conflictAlgorithm: ConflictAlgorithm.ignore,
-    );
-  }
-
-  /// Bir kelimeyi günceller
   Future<void> updateWord(int id, String word, List<String> forbiddenWords) async {
     final db = await database;
     await db.update(
@@ -263,96 +163,99 @@ class DatabaseHelper {
       {
         'word': word.trim(),
         'forbidden_words': forbiddenWords.join(', '),
+        'created_by': 0, // created_by alanını 0 yap
       },
-      where: 'id = ?',
+      where: 'id = ?', // Güncelleme koşulu
       whereArgs: [id],
     );
   }
 
-  /// Bir kelimeyi siler
-  Future<void> deleteWord(int id) async {
-    final db = await database;
-    await db.delete('words', where: 'id = ?', whereArgs: [id]);
+
+  Future<void> updateWordStatus(int id, int status) async {
+    await update('words', {'is_active': status}, where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<void> deleteWord(int id) async {
+    await updateWordStatus(id, 0); // Sadece is_active'i 0 yapar
+  }
+
+  /// Jokerler ile ilgili işlemler
+  Future<List<Map<String, dynamic>>> getJokers() async {
+    return await query('jokers');
+  }
+
+  /// Sadece aktif jokerleri döndürür
+  Future<List<Map<String, dynamic>>> getActiveJokers() async {
+    return await query('jokers', where: 'is_active = ?', whereArgs: [1]);
+  }
   /// Yeni bir joker ekler
+
   Future<void> addJoker(String message) async {
     final db = await database;
     await db.insert(
       'jokers',
-      {'message': message},
+      {
+        'message': message.trim(),
+        'is_active': 1, // Yeni joker varsayılan olarak aktif
+        'created_by': 2, // Yeni eklenen joker için created_by = 2
+      },
       conflictAlgorithm: ConflictAlgorithm.ignore,
     );
   }
 
-  /// Tüm jokerleri getirir
-  Future<List<Map<String, dynamic>>> getJokers() async {
-    final db = await database;
-    return await db.query('jokers');
-  }
-
-  /// Bir jokeri günceller
+  /// Joker günceller
   Future<void> updateJoker(int id, String message) async {
     final db = await database;
     await db.update(
       'jokers',
-      {'message': message},
+      {
+        'message': message.trim(),
+        'created_by': 0, // Güncellenen joker için created_by = 1
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
   }
 
-  /// Bir jokeri siler
+  /// Joker siler (is_active alanını 0 yapar)
   Future<void> deleteJoker(int id) async {
     final db = await database;
-    await db.delete('jokers', where: 'id = ?', whereArgs: [id]);
+    await db.update(
+      'jokers',
+      {'is_active': 0}, // Sadece is_active değerini 0 yap
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
-  /// Yeni bir oyun kaydı ekler
+  /// Oyun kayıtları ile ilgili işlemler
   Future<int> addGameRecord(String team1Name, String team2Name, int team1Score, int team2Score) async {
-    final db = await database;
-    return await db.insert(
-      'game_records',
-      {
-        'team1_name': team1Name,
-        'team2_name': team2Name,
-        'team1_score': team1Score,
-        'team2_score': team2Score,
-        'date': DateTime.now().toIso8601String(),
-      },
-    );
+    return await insert('game_records', {
+      'team1_name': team1Name,
+      'team2_name': team2Name,
+      'team1_score': team1Score,
+      'team2_score': team2Score,
+      'date': DateTime.now().toIso8601String(),
+    });
   }
 
-  /// Oyun kayıtlarını getirir
   Future<List<Map<String, dynamic>>> getGameRecords() async {
-    final db = await database;
-    return await db.query('game_records', orderBy: 'date DESC');
+    return await query('game_records', orderBy: 'date DESC');
   }
 
-  /// Oyuncu performansı ekler
-  Future<void> addPlayerPerformance(
-      int gameId, String teamName, String playerName, int correctCount, int tabooCount, int passCount) async {
-    final db = await database;
-    await db.insert(
-      'player_performances',
-      {
-        'game_id': gameId,
-        'team_name': teamName,
-        'player_name': playerName,
-        'correct_count': correctCount,
-        'taboo_count': tabooCount,
-        'pass_count': passCount,
-      },
-    );
+  /// Oyuncu performansı ile ilgili işlemler
+  Future<void> addPlayerPerformance(int gameId, String teamName, String playerName, int correctCount, int tabooCount, int passCount) async {
+    await insert('player_performances', {
+      'game_id': gameId,
+      'team_name': teamName,
+      'player_name': playerName,
+      'correct_count': correctCount,
+      'taboo_count': tabooCount,
+      'pass_count': passCount,
+    });
   }
 
-  /// Oyuncu performanslarını getirir
   Future<List<Map<String, dynamic>>> getPlayerPerformances(int gameId) async {
-    final db = await database;
-    return await db.query(
-      'player_performances',
-      where: 'game_id = ?',
-      whereArgs: [gameId],
-    );
+    return await query('player_performances', where: 'game_id = ?', whereArgs: [gameId]);
   }
 }

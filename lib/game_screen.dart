@@ -482,11 +482,13 @@ class GameScreenState extends State<GameScreen> {
   }
 
   void showJokerMessage() async {
-    // Joker gösterim seçeneğini kontrol et
     if (!widget.showJokers) return;
 
+    // Joker gösterim olasılığını ayarlar üzerinden kontrol et
+    if (Random().nextDouble() >= widget.jokerProbability) return;
+
     // Joker mesajını getir
-    String? jokerMessage = await Joker.getRandomJoker(probability: widget.jokerProbability);
+    String? jokerMessage = await Joker.getRandomJoker();
 
     // Ekranın hala mounted olup olmadığını kontrol et
     if (mounted && jokerMessage != null) {

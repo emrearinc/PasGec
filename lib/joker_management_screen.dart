@@ -34,7 +34,8 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       _isLoading = true;
     });
 
-    final jokers = await _dbHelper.getJokers();
+    // Sadece is_active = 1 olan jokerleri getir
+    final jokers = await _dbHelper.getActiveJokers();
     setState(() {
       _jokers = jokers;
       _filteredJokers = jokers;

@@ -34,15 +34,15 @@ class _WordsScreenState extends State<WordsScreen> {
         _isLoading = true;
       });
 
-      // Veritabanından kelimeleri al
-      final List<Map<String, dynamic>> words = await DatabaseHelper().getWords();
+      // Sadece is_active = 1 olan kelimeleri getir
+      final List<Map<String, dynamic>> words = await DatabaseHelper()
+          .getWords(where: 'is_active = ?', whereArgs: [1]);
 
       if (words.isEmpty) {
-        // Eğer tablo boşsa kullanıcıya uyarı göster
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Veritabanında kelime bulunamadı!'),
+              content: Text('Veritabanında aktif kelime bulunamadı!'),
             ),
           );
         }
@@ -57,7 +57,6 @@ class _WordsScreenState extends State<WordsScreen> {
       setState(() {
         _isLoading = false;
       });
-      // Hata durumunda kullanıcıyı bilgilendir
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
