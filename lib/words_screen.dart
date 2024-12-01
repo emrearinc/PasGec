@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:developer';
 import 'database_helper.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 class WordsScreen extends StatefulWidget {
   const WordsScreen({super.key});
@@ -16,6 +17,7 @@ class _WordsScreenState extends State<WordsScreen> {
   bool _isLoading = true;
   final List<int> _selectedWordIds = []; // Seçilen kelimelerin ID'lerini tutar
   bool _isSelectionMode = false; // Seçim modunun aktif olup olmadığını kontrol eder
+  final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
 
   @override
   void initState() {
@@ -229,7 +231,8 @@ class _WordsScreenState extends State<WordsScreen> {
               itemCount: _filteredWords.length,
               itemBuilder: (context, index) {
                 final word = _filteredWords[index];
-                final isSelected = _selectedWordIds.contains(word['id']); // Seçili olup olmadığını kontrol et
+                final isSelected = _selectedWordIds.contains(
+                    word['id']); // Seçili olup olmadığını kontrol et
                 return Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -298,7 +301,8 @@ class _WordsScreenState extends State<WordsScreen> {
                     onLongPress: () {
                       setState(() {
                         _isSelectionMode = true;
-                        _selectedWordIds.add(word['id']); // Uzun basılan kelimeyi seçili yap
+                        _selectedWordIds.add(
+                            word['id']); // Uzun basılan kelimeyi seçili yap
                       });
                     },
                   ),
@@ -315,20 +319,22 @@ class _WordsScreenState extends State<WordsScreen> {
   Future<void> _deleteSelectedWords() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Toplu Silme'),
-        content: const Text('Seçilen kelimeleri silmek istediğinize emin misiniz?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Hayır'),
+      builder: (context) =>
+          AlertDialog(
+            title: const Text('Toplu Silme'),
+            content: const Text(
+                'Seçilen kelimeleri silmek istediğinize emin misiniz?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Hayır'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Evet'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Evet'),
-          ),
-        ],
-      ),
     );
 
     // Eğer işlem onaylanmadıysa çık
@@ -439,19 +445,25 @@ class _WordsScreenState extends State<WordsScreen> {
     );
   }
 
-  void _showEditWordDialog(int id, String initialWord, List<String> initialForbiddenWords) {
-    final TextEditingController wordController = TextEditingController(text: initialWord);
+  void _showEditWordDialog(int id, String initialWord,
+      List<String> initialForbiddenWords) {
+    final TextEditingController wordController = TextEditingController(
+        text: initialWord);
     final List<TextEditingController> forbiddenControllers = List.generate(
       5,
-          (i) => TextEditingController(
-          text: i < initialForbiddenWords.length ? initialForbiddenWords[i] : ''),
+          (i) =>
+          TextEditingController(
+              text: i < initialForbiddenWords.length
+                  ? initialForbiddenWords[i]
+                  : ''),
     );
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20)),
           title: const Center(
             child: Text(
               'Kelimeyi Düzenle',
@@ -467,7 +479,8 @@ class _WordsScreenState extends State<WordsScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Kelime',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                    contentPadding: EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 15),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -479,7 +492,8 @@ class _WordsScreenState extends State<WordsScreen> {
                       decoration: InputDecoration(
                         labelText: 'Yasaklı Kelime ${i + 1}',
                         border: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 15),
                       ),
                     ),
                   ),
@@ -509,7 +523,8 @@ class _WordsScreenState extends State<WordsScreen> {
                   Navigator.of(context).pop();
                 }
               },
-              child: const Text('Güncelle', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                  'Güncelle', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -520,15 +535,24 @@ class _WordsScreenState extends State<WordsScreen> {
   void _updateWord(int id, String word, List<String> forbiddenWords) async {
     try {
       await DatabaseHelper().updateWord(id, word, forbiddenWords);
-      if (!mounted) return; // Eğer widget kaldırılmışsa işlem iptal edilir
+      if (!mounted) return;
+
+      // Firebase Analytics olayı
+      await _analytics.logEvent(
+        name: 'word_updated',
+        parameters: {
+          'word_id': id,
+          'word': word,
+          'forbidden_words': forbiddenWords.join(', '),
+        },
+      );
+
       _fetchWords();
-      // Başarı mesajı
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Kelime başarıyla güncellendi!')),
       );
     } catch (e) {
-      if (!mounted) return; // Eğer widget kaldırılmışsa işlem iptal edilir
-      // Hata mesajını göstermek
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (context) {
@@ -547,10 +571,20 @@ class _WordsScreenState extends State<WordsScreen> {
     }
   }
 
+
   void _addWord(String word, List<String> forbiddenWords) async {
     try {
       await DatabaseHelper().addWord(word, forbiddenWords);
-      if (!mounted) return; // Widget kaldırılmışsa işlemi durdur
+      if (!mounted) return;
+
+      // Firebase Analytics olayı
+      await _analytics.logEvent(
+        name: 'word_added',
+        parameters: {
+          'word': word,
+          'forbidden_words': forbiddenWords.join(', '),
+        },
+      );
 
       _fetchWords();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -561,29 +595,40 @@ class _WordsScreenState extends State<WordsScreen> {
     }
   }
 
+
   void _deleteWord(int id) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Kelime Sil'),
-        content: const Text('Bu kelimeyi silmek istediğinize emin misiniz?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Hayır'),
+      builder: (context) =>
+          AlertDialog(
+            title: const Text('Kelime Sil'),
+            content: const Text(
+                'Bu kelimeyi silmek istediğinize emin misiniz?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Hayır'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Evet'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Evet'),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
       try {
         await DatabaseHelper().deleteWord(id);
-        if (!mounted) return; // Widget kaldırılmışsa işlemi durdur
+        if (!mounted) return;
+
+        // Firebase Analytics olayı
+        await _analytics.logEvent(
+          name: 'word_deleted',
+          parameters: {
+            'word_id': id,
+          },
+        );
 
         _fetchWords();
         ScaffoldMessenger.of(context).showSnackBar(

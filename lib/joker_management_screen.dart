@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'database_helper.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 class JokerManagementScreen extends StatefulWidget {
   const JokerManagementScreen({super.key});
@@ -17,6 +18,7 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
   bool _isLoading = true;
   bool _isSelectionMode = false; // Seçim modunun aktif olup olmadığını kontrol eder
   final List<int> _selectedJokerIds = []; // Seçilen jokerlerin ID'lerini tutar
+  final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
 
   @override
   void initState() {
@@ -59,16 +61,26 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
 
   Future<void> _addJoker() async {
     if (_jokerController.text.isNotEmpty) {
-      await _dbHelper.addJoker(_jokerController.text.trim());
+      final jokerMessage = _jokerController.text.trim();
+      await _dbHelper.addJoker(jokerMessage);
       _jokerController.clear();
       await _fetchJokers();
       if (mounted) {
         _showSnackBar('Joker başarıyla eklendi!');
       }
+
+      // Firebase Analytics olayı
+      await _analytics.logEvent(
+        name: 'joker_added',
+        parameters: {
+          'message': jokerMessage,
+        },
+      );
     } else {
       _showErrorDialog('Lütfen joker mesajını giriniz!');
     }
   }
+
 
   Future<void> _updateJoker(int id, String newMessage) async {
     if (newMessage.isNotEmpty) {
@@ -77,10 +89,20 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       if (mounted) {
         _showSnackBar('Joker başarıyla güncellendi!');
       }
+
+      // Firebase Analytics olayı
+      await _analytics.logEvent(
+        name: 'joker_updated',
+        parameters: {
+          'joker_id': id,
+          'new_message': newMessage.trim(),
+        },
+      );
     } else {
       _showErrorDialog('Joker mesajı boş olamaz!');
     }
   }
+
 
   Future<void> _deleteJoker(int id) async {
     final confirm = await _showConfirmationDialog(
@@ -91,8 +113,17 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       if (mounted) {
         _showSnackBar('Joker başarıyla silindi!');
       }
+
+      // Firebase Analytics olayı
+      await _analytics.logEvent(
+        name: 'joker_deleted',
+        parameters: {
+          'joker_id': id,
+        },
+      );
     }
   }
+
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -178,6 +209,7 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       },
     );
   }
+
   Future<void> _deleteSelectedJokers() async {
     if (_selectedJokerIds.isEmpty) return;
 
@@ -216,12 +248,21 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Seçilen jokerler başarıyla silindi!')),
       );
+
+      // Firebase Analytics olayı
+      await _analytics.logEvent(
+        name: 'jokers_bulk_deleted',
+        parameters: {
+          'joker_ids': _selectedJokerIds.join(', '),
+        },
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Hata oluştu: $e')),
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

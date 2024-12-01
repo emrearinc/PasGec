@@ -1,8 +1,32 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Flutter başlatılıyor
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // Firebase başlatılıyor
+
+  // Awesome Notifications'ı başlat
+  AwesomeNotifications().initialize(
+    'resource://drawable/res_notification_app_icon', // İkon yolu
+    [
+      NotificationChannel(
+        channelKey: 'basic_channel',
+        channelName: 'Temel Bildirimler',
+        channelDescription: 'Genel bildirimler için kanal',
+        defaultColor: const Color(0xFF9D50DD),
+        ledColor: Colors.white,
+        importance: NotificationImportance.High,
+      ),
+    ],
+  );
+  // Kullanıcıdan bildirim izni isteyin
+  AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+    if (!isAllowed) {
+      AwesomeNotifications().requestPermissionToSendNotifications();
+    }
+  });
   runApp(const MyApp());
 }
 

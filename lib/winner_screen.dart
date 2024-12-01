@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tabu_oyunu/models/player_performance.dart';
 import 'package:tabu_oyunu/database_helper.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 class WinnerScreen extends StatefulWidget {
   final String winningTeam;
@@ -27,6 +28,7 @@ class WinnerScreen extends StatefulWidget {
 }
 
 class _WinnerScreenState extends State<WinnerScreen> {
+  final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
   bool _isSaved = false; // Kaydın yalnızca bir kez yapılmasını sağlamak için flag
 
   @override
@@ -40,12 +42,23 @@ class _WinnerScreenState extends State<WinnerScreen> {
     final dbHelper = DatabaseHelper();
 
     try {
+      // Toplam puanları hesapla
+      final int team1Score = widget.team1Performances.fold(
+        0,
+            (int sum, PlayerPerformance player) => sum + player.correctCount,
+      );
+
+      final int team2Score = widget.team2Performances.fold(
+        0,
+            (int sum, PlayerPerformance player) => sum + player.correctCount,
+      );
+
       // Oyun kayıtlarını kaydet
       int gameId = await dbHelper.addGameRecord(
         widget.team1Name,
         widget.team2Name,
-        widget.team1Performances.fold(0, (sum, player) => sum + player.correctCount),
-        widget.team2Performances.fold(0, (sum, player) => sum + player.correctCount),
+        team1Score,
+        team2Score,
       );
 
       // Oyuncu performanslarını kaydet
@@ -70,6 +83,18 @@ class _WinnerScreenState extends State<WinnerScreen> {
           player.passCount,
         );
       }
+
+      // Firebase Analytics'e oyun verilerini gönder
+      await _analytics.logEvent(
+        name: 'game_saved',
+        parameters: {
+          'winning_team': widget.winningTeam,
+          'team1_score': team1Score,
+          'team2_score': team2Score,
+          'team1_players': widget.team1Performances.map((p) => p.playerName).join(', '),
+          'team2_players': widget.team2Performances.map((p) => p.playerName).join(', '),
+        },
+      );
 
       // Başarı mesajı
       await _showSaveGameResult("Oyun bilgileri başarıyla kaydedildi!");

@@ -15,8 +15,12 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:tabu_oyunu/models/player_performance.dart';
 import 'package:tabu_oyunu/winner_screen.dart';
 import 'dart:developer' as developer; // Geliştirici günlükleme için
+import 'package:firebase_analytics/firebase_analytics.dart';
 
-late AudioPlayer audioPlayer;
+late AudioPlayer audioPlayer; // Genel sesler için
+late AudioPlayer timerAudioPlayer; // Timer sesleri için
+
+bool isTimerSoundPlaying = false; // Timer sesi çalıyor mu kontrolü
 
 class GameScreen extends StatefulWidget {
   final List<String> team1Players;
@@ -142,7 +146,8 @@ class GameScreenState extends State<GameScreen> {
     _resetJokers();
 
     // Ses oynatıcısını başlat
-    audioPlayer = AudioPlayer();
+    audioPlayer = AudioPlayer(); // Genel ses çalar
+    timerAudioPlayer = AudioPlayer(); // Timer ses çalar
   }
 
 
@@ -195,7 +200,8 @@ class GameScreenState extends State<GameScreen> {
   @override
   void dispose() {
     timer?.cancel();
-    audioPlayer.dispose(); // AudioPlayer'ı temizle
+    audioPlayer.dispose(); // Genel ses çalarını temizle
+    timerAudioPlayer.dispose(); // Timer ses çalarını temizle
     super.dispose();
   }
 
@@ -205,8 +211,8 @@ class GameScreenState extends State<GameScreen> {
         if (timerValue > 0 && !isPaused) {
           timerValue--;
 
-          // 10 saniye kaldığında sesi başlat
-          if (timerValue == 5) {
+          // 5 saniye kaldığında timer.mp3 sesini çal
+          if (timerValue == 5 && !isTimerSoundPlaying) {
             playTimerSound();
           }
         } else if (timerValue == 0 && !isGameOver) {
@@ -216,6 +222,7 @@ class GameScreenState extends State<GameScreen> {
       });
     });
   }
+
 
 
   String getCurrentPlayer() {
@@ -261,20 +268,21 @@ class GameScreenState extends State<GameScreen> {
     });
   }
 
-
+// Timer sesini başlatma metodu
   void playTimerSound() async {
-    if (!isPlayingSound) {
-      isPlayingSound = true;
+    if (!isTimerSoundPlaying) {
+      isTimerSoundPlaying = true;
       try {
-        await playSound('sound/timer.MP3');
+        await timerAudioPlayer.setSource(AssetSource('sound/timer.MP3'));
+        await timerAudioPlayer.setReleaseMode(ReleaseMode.stop); // Tek seferlik çal
+        await timerAudioPlayer.resume(); // Timer sesini çal
       } catch (e, stackTrace) {
         developer.log(
-          'Zamanlayıcı sesi çalma sırasında hata oluştu',
+          'Timer sesi başlatılırken hata oluştu',
           error: e,
           stackTrace: stackTrace,
         );
       }
-      isPlayingSound = false; // İşlem tamamlandıktan sonra sıfırla
     }
   }
 
@@ -307,7 +315,7 @@ class GameScreenState extends State<GameScreen> {
       playSound('sound/tabu.MP3');
 
       // Titreşim ekle
-      Vibration.vibrate(duration: 500); // 500ms titreşim
+      Vibration.vibrate(duration: 200); // 500ms titreşim
 
       nextWord(); // Bir sonraki kelimeye geç
     });
@@ -400,17 +408,21 @@ class GameScreenState extends State<GameScreen> {
 
       currentPassCount = widget.passLimit;
       isPassButtonDisabled = currentPassCount == 0;
-      resetTimer();
+
+      resetTimer(); // Timer ve ses sıfırlama
       showJokerMessage();
     });
   }
 
+
   void resetTimer() {
     setState(() {
       timerValue = widget.gameTime;
+      isTimerSoundPlaying = false; // Timer sesinin yeniden çalınmasına izin ver
     });
     startTimer();
   }
+
 
   void pauseTimer() {
     if (!isPaused) {
@@ -445,10 +457,29 @@ class GameScreenState extends State<GameScreen> {
   }
 
 
+// Timer sesini durdurma metodu (gerekirse kullanılır)
   void stopTimerSound() async {
-    if (isPlayingSound) {
-      await audioPlayer.stop(); // Sesi durdur
-      isPlayingSound = false;
+    if (isTimerSoundPlaying) {
+      try {
+        await timerAudioPlayer.stop();
+        isTimerSoundPlaying = false;
+      } catch (e, stackTrace) {
+        developer.log(
+          'Timer sesi durdurulurken hata oluştu',
+          error: e,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+  }
+// Genel sesleri çalarken timer sesini etkileme
+  Future<void> playGeneralSound(String assetPath) async {
+    try {
+      developer.log('Ses dosyası çalınmaya çalışılıyor: $assetPath');
+      await audioPlayer.setSource(AssetSource(assetPath));
+      await audioPlayer.resume();
+    } catch (e) {
+      developer.log('Ses çalınırken hata oluştu: $e');
     }
   }
 
@@ -588,17 +619,26 @@ class GameScreenState extends State<GameScreen> {
 
   Set<int> usedWordIndexes = {};
 
-    void nextWord() {
-      setState(() {
-        if (usedWordIndexes.length == words.length) {
-          usedWordIndexes.clear();
-        }
-        do {
-          currentWordIndex = Random().nextInt(words.length);
-        } while (usedWordIndexes.contains(currentWordIndex));
-        usedWordIndexes.add(currentWordIndex);
-      });
-    }
+  void nextWord() async {
+    setState(() {
+      if (usedWordIndexes.length == words.length) {
+        usedWordIndexes.clear();
+      }
+      do {
+        currentWordIndex = Random().nextInt(words.length);
+      } while (usedWordIndexes.contains(currentWordIndex));
+      usedWordIndexes.add(currentWordIndex);
+    });
+
+    // Firebase Analytics olayı
+    await FirebaseAnalytics.instance.logEvent(
+      name: 'word_displayed',
+      parameters: {
+        'word': words[currentWordIndex].word,
+      },
+    );
+  }
+
 
 
 
@@ -608,26 +648,26 @@ class GameScreenState extends State<GameScreen> {
       String winningTeam = team1Score >= widget.gameScore ? widget.team1Name : widget.team2Name;
       isGameOver = true;
       timer?.cancel();
-      // Performans listelerini konsolda kontrol et
+      stopTimerSound(); // Timer sesini durdur
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => WinnerScreen(
             winningTeam: winningTeam,
-            team1Name: widget.team1Name, // Takım 1 adı gönderiliyor
-            team2Name: widget.team2Name, // Takım 2 adı gönderiliyor
+            team1Name: widget.team1Name,
+            team2Name: widget.team2Name,
             team1Performances: team1Performances,
             team2Performances: team2Performances,
-
-            onPlayAgain: resetGame, // Yeniden oyun başlatma
+            onPlayAgain: resetGame,
             onMainMenu: () {
-              Navigator.popUntil(context, (route) => route.isFirst); // Ana menüye dönmek için
+              Navigator.popUntil(context, (route) => route.isFirst);
             },
           ),
         ),
       );
     }
   }
+
 
   void resetPerformances() {
     setState(() {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart'; // Versiyon bilgisi için
+import 'package:awesome_notifications/awesome_notifications.dart'; // Bildirimler için
 import 'team_selection_screen.dart';
 import 'settings_screen.dart';
 import 'words_screen.dart';
@@ -48,6 +49,21 @@ class HomeScreenState extends State<HomeScreen> {
     final packageInfo = await PackageInfo.fromPlatform();
     setState(() {
       _appVersion = 'v${packageInfo.version}+${packageInfo.buildNumber}';
+    });
+  }
+  void _sendWelcomeNotification() {
+    AwesomeNotifications().createNotification(
+      content: NotificationContent(
+        id: 1,
+        channelKey: 'basic_channel',
+        title: 'Pas Geç Uygulamasına Hoş Geldiniz!',
+        body: 'Oyuna başlamadan önce ayarlarınızı kontrol etmeyi unutmayın!',
+        notificationLayout: NotificationLayout.Default,
+      ),
+    ).then((_) {
+      print('Bildirim gönderildi.');
+    }).catchError((error) {
+      print('Bildirim gönderilirken hata oluştu: $error');
     });
   }
 

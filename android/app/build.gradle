@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace "com.example.tabu_oyunu" // Projenizin benzersiz kimliği
+    namespace "com.example.pasgec" // Projenizin benzersiz kimliği
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "25.1.8937393" // Güncel NDK sürümü
 
@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.pasgec" // Benzersiz Application ID
-        minSdk = flutter.minSdkVersion
+        minSdk = 23 // Minimum SDK Versiyonu
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -33,12 +33,14 @@ android {
     buildTypes {
         release {
             // Kod karıştırmayı ve kaynak küçültmeyi etkinleştir
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
+            shrinkResources false
 
             // Varsayılan ve özel ProGuard dosyalarını kullan
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
 
+            // R8 hata ayıklama için ek ayarlar
+            debuggable false
             // Release sürümü için imzalama yapılandırması
             signingConfig signingConfigs.debug
         }
@@ -59,6 +61,7 @@ android {
         }
     }
 }
+apply plugin: 'com.google.gms.google-services'
 
 flutter {
     source = "../.."

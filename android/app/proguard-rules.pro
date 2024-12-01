@@ -25,3 +25,16 @@
 # SQLCipher
 -keep class net.sqlcipher.** { *; }
 -dontwarn net.sqlcipher.**
+
+# Eksik sınıfı koru
+-keep class com.google.j2objc.annotations.** { *; }
+-dontwarn com.google.j2objc.annotations.**
+-keep public class io.flutter.** { *; }
+-keep public class androidx.** { *; }
+-keep public class com.google.** { *; }
+-keepattributes *Annotation*
+-dontwarn io.flutter.embedding.**
+-dontwarn androidx.**
+
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
