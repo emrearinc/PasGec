@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "859386992003",
+    "firebase_url": "https://pasgec-a8c7c-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "pasgec-a8c7c",
+    "storage_bucket": "pasgec-a8c7c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:859386992003:android:9718ab12c8fdc2815252b6",
+        "android_client_info": {
+          "package_name": "com.example.pasgec"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBIs8ef_uLAYSszkxLQVHtdibjwBIUBxX4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:859386992003:android:d616ff1649b24e145252b6",
+        "android_client_info": {
+          "package_name": "com.pasgec.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBIs8ef_uLAYSszkxLQVHtdibjwBIUBxX4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
