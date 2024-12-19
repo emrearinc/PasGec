@@ -30,9 +30,9 @@ class HowToPlayScreen extends StatelessWidget {
           child: ListView(
             children: [
               const SizedBox(height: 20),
-              _buildSectionTitle('🎯 Tabu Oyunu Nedir?'),
+              _buildSectionTitle('🎯 Pas Geç Oyunu Nedir?'),
               _buildText(
-                'Tabu, kelime tahmini ve ekip oyunu üzerine kurulu, eğlenceli bir grup oyunudur. Amacınız, takım arkadaşlarınıza belirli bir kelimeyi yasaklı kelimeleri kullanmadan tahmin ettirmek.',
+                'PasGeç!, kelime tahmini ve ekip oyunu üzerine kurulu, eğlenceli bir grup oyunudur. Amacınız, takım arkadaşlarınıza belirli bir kelimeyi yasaklı kelimeleri kullanmadan tahmin ettirmek.',
               ),
               const SizedBox(height: 20),
               _buildSectionTitle('👥 Oyuncu Sayısı'),

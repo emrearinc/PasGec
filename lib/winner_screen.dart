@@ -42,7 +42,6 @@ class _WinnerScreenState extends State<WinnerScreen> {
     final dbHelper = DatabaseHelper();
 
     try {
-      // Toplam puanları hesapla
       final int team1Score = widget.team1Performances.fold(
         0,
             (int sum, PlayerPerformance player) => sum + player.correctCount,
@@ -53,7 +52,6 @@ class _WinnerScreenState extends State<WinnerScreen> {
             (int sum, PlayerPerformance player) => sum + player.correctCount,
       );
 
-      // Oyun kayıtlarını kaydet
       int gameId = await dbHelper.addGameRecord(
         widget.team1Name,
         widget.team2Name,
@@ -61,7 +59,6 @@ class _WinnerScreenState extends State<WinnerScreen> {
         team2Score,
       );
 
-      // Oyuncu performanslarını kaydet
       for (var player in widget.team1Performances) {
         await dbHelper.addPlayerPerformance(
           gameId,
@@ -84,7 +81,6 @@ class _WinnerScreenState extends State<WinnerScreen> {
         );
       }
 
-      // Firebase Analytics'e oyun verilerini gönder
       await _analytics.logEvent(
         name: 'game_saved',
         parameters: {
@@ -96,13 +92,11 @@ class _WinnerScreenState extends State<WinnerScreen> {
         },
       );
 
-      // Başarı mesajı
       await _showSaveGameResult("Oyun bilgileri başarıyla kaydedildi!");
       setState(() {
-        _isSaved = true; // Kaydın tamamlandığını işaretle
+        _isSaved = true;
       });
     } catch (e) {
-      // Hata mesajı
       await _showSaveGameResult("Veritabanına kaydedilirken hata oluştu: $e", isSuccess: false);
     }
   }
@@ -139,15 +133,30 @@ class _WinnerScreenState extends State<WinnerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text("Kazanan Takım"),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        flexibleSpace: Container(
+    return WillPopScope(
+      onWillPop: () async => false, // Geri tuşunu devre dışı bırak
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          title: const Text("Kazanan Takım"),
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.deepPurple, Colors.pinkAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          automaticallyImplyLeading: false, // AppBar'da geri butonunu kaldır
+        ),
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [Colors.deepPurple, Colors.pinkAccent],
@@ -155,42 +164,31 @@ class _WinnerScreenState extends State<WinnerScreen> {
               end: Alignment.bottomRight,
             ),
           ),
-        ),
-      ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.pinkAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "${widget.winningTeam} Kazandı!",
-                  style: const TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "${widget.winningTeam} Kazandı!",
+                    style: const TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                _buildPerformanceCard(widget.team1Name, widget.team1Performances),
-                const SizedBox(height: 20),
-                _buildPerformanceCard(widget.team2Name, widget.team2Performances),
-                const SizedBox(height: 30),
-                _buildButton("Yeniden Oyna", Colors.green, widget.onPlayAgain),
-                const SizedBox(height: 15),
-                _buildButton("Ana Menü", Colors.red, widget.onMainMenu),
-              ],
+                  const SizedBox(height: 20),
+                  _buildPerformanceCard(widget.team1Name, widget.team1Performances),
+                  const SizedBox(height: 20),
+                  _buildPerformanceCard(widget.team2Name, widget.team2Performances),
+                  const SizedBox(height: 30),
+                  _buildButton("Yeniden Oyna", Colors.green, widget.onPlayAgain),
+                  const SizedBox(height: 15),
+                  _buildButton("Ana Menü", Colors.red, widget.onMainMenu),
+                ],
+              ),
             ),
           ),
         ),
@@ -221,7 +219,7 @@ class _WinnerScreenState extends State<WinnerScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-            ...performances.map((performance) { // `toList` kaldırıldı
+            ...performances.map((performance) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Container(
@@ -286,7 +284,6 @@ class _WinnerScreenState extends State<WinnerScreen> {
       ),
     );
   }
-
 
   Widget _buildButton(String label, Color color, VoidCallback onPressed) {
     return ElevatedButton(

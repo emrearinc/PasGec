@@ -77,6 +77,7 @@ class HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: SafeArea(
+        top: false, // Üst boşluğu iptal eder
         child: Stack(
           children: [
             Container(

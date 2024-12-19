@@ -24,12 +24,12 @@ class TeamSelectionScreen extends StatefulWidget {
 }
 
 class TeamSelectionScreenState extends State<TeamSelectionScreen> {
-  final _team1Controller = TextEditingController();
-  final _team2Controller = TextEditingController();
-  final List<TextEditingController> _team1PlayersControllers =
-  List.generate(4, (_) => TextEditingController());
-  final List<TextEditingController> _team2PlayersControllers =
-  List.generate(4, (_) => TextEditingController());
+  final _team1Controller = TextEditingController(text: "Siyah Takım");
+  final _team2Controller = TextEditingController(text: "Beyaz Takım");
+  final List<TextEditingController> _team1PlayersControllers = List.generate(
+      4, (index) => TextEditingController(text: index == 0 ? "Siyah 1" : ""));
+  final List<TextEditingController> _team2PlayersControllers = List.generate(
+      4, (index) => TextEditingController(text: index == 0 ? "Beyaz 1" : ""));
 
   @override
   void dispose() {
@@ -139,10 +139,10 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF6A1B9A), // Koyu mor
-              Color(0xFF8E24AA), // Orta mor
-              Color(0xFFAB47BC), // Açık mor
-              Color(0xFFE1BEE7), // Çok açık mor
+              Color(0xFF6A1B9A),
+              Color(0xFF8E24AA),
+              Color(0xFFAB47BC),
+              Color(0xFFE1BEE7),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -155,9 +155,11 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                _buildTeamCard('1. Takım Bilgileri', _team1Controller, _team1PlayersControllers, screenWidth),
+                _buildTeamCard(
+                    '1. Takım Bilgileri', _team1Controller, _team1PlayersControllers, screenWidth),
                 const SizedBox(height: 20),
-                _buildTeamCard('2. Takım Bilgileri', _team2Controller, _team2PlayersControllers, screenWidth),
+                _buildTeamCard(
+                    '2. Takım Bilgileri', _team2Controller, _team2PlayersControllers, screenWidth),
                 const SizedBox(height: 30),
                 Center(
                   child: ElevatedButton.icon(
@@ -188,45 +190,9 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
       ),
     );
   }
-  Widget _buildPlayerInputsColumn(
-      String labelPrefix, List<TextEditingController> controllers, double screenWidth) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: List.generate(controllers.length, (index) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6.0), // Daha yakın yerleşim
-          child: TextField(
-            controller: controllers[index],
-            style: const TextStyle(
-              color: Colors.deepPurple,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-            decoration: InputDecoration(
-              labelText: '$labelPrefix ${index + 1}',
-              labelStyle: const TextStyle(
-                color: Colors.deepPurple,
-                fontWeight: FontWeight.bold,
-              ),
-              filled: true,
-              fillColor: Colors.deepPurple.shade50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.deepPurple),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.deepPurpleAccent, width: 2),
-              ),
-            ),
-          ),
-        );
-      }),
-    );
-  }
 
-  Widget _buildTeamCard(
-      String title, TextEditingController teamController, List<TextEditingController> playerControllers, double screenWidth) {
+  Widget _buildTeamCard(String title, TextEditingController teamController,
+      List<TextEditingController> playerControllers, double screenWidth) {
     return Card(
       elevation: 6,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -235,7 +201,7 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.deepPurpleAccent, width: 1.5), // Dış çerçeve
+          border: Border.all(color: Colors.deepPurpleAccent, width: 1.5),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,7 +217,7 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
             const SizedBox(height: 10),
             _buildTeamNameInput('Takım Adı', teamController),
             const SizedBox(height: 20),
-            _buildPlayerInputsColumn('Oyuncu', playerControllers, screenWidth), // Kolon yerleşimi
+            _buildPlayerInputsColumn('Oyuncu', playerControllers, screenWidth),
           ],
         ),
       ),
@@ -286,23 +252,40 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
     );
   }
 
-  Widget _buildPlayerInput(String label, TextEditingController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: TextField(
-        controller: controller,
-        style: const TextStyle(color: Colors.deepPurple),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Colors.deepPurple),
-          filled: true,
-          fillColor: Colors.deepPurple.shade50,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: const BorderSide(color: Colors.deepPurple),
+  Widget _buildPlayerInputsColumn(String labelPrefix,
+      List<TextEditingController> controllers, double screenWidth) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: List.generate(controllers.length, (index) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6.0),
+          child: TextField(
+            controller: controllers[index],
+            style: const TextStyle(
+              color: Colors.deepPurple,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+            decoration: InputDecoration(
+              labelText: '$labelPrefix ${index + 1}',
+              labelStyle: const TextStyle(
+                color: Colors.deepPurple,
+                fontWeight: FontWeight.bold,
+              ),
+              filled: true,
+              fillColor: Colors.deepPurple.shade50,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.deepPurple),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.deepPurpleAccent, width: 2),
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }
