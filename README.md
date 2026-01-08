@@ -41,20 +41,6 @@ flutter run
 -Geliştirme Ortamı: VS Code, Android Studio veya başka bir IDE
 -Cihaz: Android veya iOS destekli bir cihaz/emülatör
 
-🗂️ Proje Yapısı
-lib/
-├── main.dart            # Uygulamanın başlangıç noktası
-├── screens/             # Oyun ekranları (örneğin: game_screen, settings_screen)
-├── models/              # Veri modelleri
-├── services/            # Firebase veya SQLite işlemleri
-├── utils/               # Yardımcı sınıflar ve fonksiyonlar
-
-📷 Uygulama Görselleri
-Ana Menü
-
-### Oyun Ekranı
-![Oyun Ekranı](https://via.placeholder.com/400x300)
-
 ---
 
 ## 🤝 Katkıda Bulunma
@@ -80,7 +66,7 @@ Bu proje, MIT Lisansı kapsamında lisanslanmıştır.
 Eğer herhangi bir sorunuz veya öneriniz varsa benimle iletişime geçebilirsiniz:
 
 Geliştirici: Emre Arınç
-E-posta: emrearinç@example.com
+E-posta: emreearinc@gmail.com
 GitHub: emrearinc
 
 
