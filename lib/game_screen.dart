@@ -489,39 +489,44 @@ class GameScreenState extends State<GameScreen> {
       child: Scaffold(
         appBar: _buildAppBar(),
         extendBodyBehindAppBar: true,
-        body: Stack(
-          children: [
-            _buildBody(),
-            // Offline göstergesi
-            if (!_isOnline)
-              Positioned(
-                top: 80,
-                right: 16,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.cloud_off, color: Colors.white, size: 16),
-                      SizedBox(width: 6),
-                      Text(
-                        'Offline',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+        resizeToAvoidBottomInset: false,
+        body: SafeArea(
+          top: true,
+          bottom: true,
+          child: Stack(
+            children: [
+              _buildBody(),
+              // Offline göstergesi
+              if (!_isOnline)
+                Positioned(
+                  top: 80,
+                  right: 16,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.cloud_off, color: Colors.white, size: 16),
+                        SizedBox(width: 6),
+                        Text(
+                          'Offline',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

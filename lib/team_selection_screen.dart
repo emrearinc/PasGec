@@ -133,21 +133,25 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
       ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF6A1B9A),
-              Color(0xFF8E24AA),
-              Color(0xFFAB47BC),
-              Color(0xFFE1BEE7),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      resizeToAvoidBottomInset: false,
+      body: SafeArea(
+        top: true,
+        bottom: true,
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF6A1B9A),
+                Color(0xFF8E24AA),
+                Color(0xFFAB47BC),
+                Color(0xFFE1BEE7),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
         child: SingleChildScrollView(
           child: Padding(
             padding: EdgeInsets.all(padding),
@@ -284,8 +288,8 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
               ),
             ),
           ),
-        );
-      }),
+        ),
+      ),
     );
   }
 }

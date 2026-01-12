@@ -16,7 +16,8 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
   List<Map<String, dynamic>> _jokers = [];
   List<Map<String, dynamic>> _filteredJokers = [];
   bool _isLoading = true;
-  bool _isSelectionMode = false; // Seçim modunun aktif olup olmadığını kontrol eder
+  bool _isSelectionMode =
+      false; // Seçim modunun aktif olup olmadığını kontrol eder
   final List<int> _selectedJokerIds = []; // Seçilen jokerlerin ID'lerini tutar
   final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
 
@@ -53,9 +54,9 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       _filteredJokers = query.isEmpty
           ? _jokers
           : _jokers
-          .where((joker) =>
-          joker['message'].toString().toLowerCase().contains(query))
-          .toList();
+              .where((joker) =>
+                  joker['message'].toString().toLowerCase().contains(query))
+              .toList();
     });
   }
 
@@ -81,7 +82,6 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
     }
   }
 
-
   Future<void> _updateJoker(int id, String newMessage) async {
     if (newMessage.isNotEmpty) {
       await _dbHelper.updateJoker(id, newMessage.trim());
@@ -103,7 +103,6 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
     }
   }
 
-
   Future<void> _deleteJoker(int id) async {
     final confirm = await _showConfirmationDialog(
         'Bu jokeri silmek istediğinize emin misiniz?');
@@ -123,7 +122,6 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       );
     }
   }
-
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -154,34 +152,35 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
 
   Future<bool> _showConfirmationDialog(String message) async {
     return await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Onay'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hayır'),
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Onay'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Hayır'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Evet'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Evet'),
-          ),
-        ],
-      ),
-    ) ??
+        ) ??
         false;
   }
 
   Future<void> _showEditJokerDialog(int id, String currentMessage) async {
     final TextEditingController editController =
-    TextEditingController(text: currentMessage);
+        TextEditingController(text: currentMessage);
 
     await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text('Jokeri Düzenle'),
           content: TextField(
             controller: editController,
@@ -217,7 +216,8 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Toplu Silme'),
-        content: const Text('Seçilen jokerleri silmek istediğinize emin misiniz?'),
+        content:
+            const Text('Seçilen jokerleri silmek istediğinize emin misiniz?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -263,7 +263,6 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -278,74 +277,81 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
         backgroundColor: Colors.deepPurple,
         actions: _isSelectionMode
             ? [
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            onPressed: _selectedJokerIds.isEmpty
-                ? null
-                : () async {
-              await _deleteSelectedJokers();
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.cancel, color: Colors.white),
-            onPressed: () {
-              setState(() {
-                _isSelectionMode = false;
-                _selectedJokerIds.clear();
-              });
-            },
-          ),
-        ]
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: _selectedJokerIds.isEmpty
+                      ? null
+                      : () async {
+                          await _deleteSelectedJokers();
+                        },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.cancel, color: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      _isSelectionMode = false;
+                      _selectedJokerIds.clear();
+                    });
+                  },
+                ),
+              ]
             : [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.white),
-            onPressed: _showAddJokerDialog,
-          ),
-        ],
+                IconButton(
+                  icon: const Icon(Icons.add, color: Colors.white),
+                  onPressed: _showAddJokerDialog,
+                ),
+              ],
       ),
-
-
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.purpleAccent, Colors.blueAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      resizeToAvoidBottomInset: false,
+      body: SafeArea(
+        top: true,
+        bottom: true,
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.deepPurple,
+                Colors.purpleAccent,
+                Colors.blueAccent
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
-        ),
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(
-                  hintText: 'Joker Ara...',
-                  prefixIcon: Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius:
-                    BorderRadius.all(Radius.circular(10.0)),
-                  ),
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Joker Ara...',
+                          prefixIcon: Icon(Icons.search),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(10.0)),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Text(
+                        "Toplam Joker Sayısı: ${_filteredJokers.length}",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    Expanded(child: _buildJokerList()),
+                  ],
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Text(
-                "Toplam Joker Sayısı: ${_filteredJokers.length}",
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            Expanded(child: _buildJokerList()),
-          ],
         ),
       ),
     );
@@ -365,29 +371,32 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       itemCount: _filteredJokers.length,
       itemBuilder: (context, index) {
         final joker = _filteredJokers[index];
-        final isSelected = _selectedJokerIds.contains(joker['id']); // Joker seçili mi?
+        final isSelected =
+            _selectedJokerIds.contains(joker['id']); // Joker seçili mi?
 
         return Card(
           margin: const EdgeInsets.all(8.0),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           elevation: 3,
           color: isSelected
-              ? Colors.deepPurple.withOpacity(0.2) // Seçili olan jokerin arka planı
+              ? Colors.deepPurple
+                  .withOpacity(0.2) // Seçili olan jokerin arka planı
               : Colors.white.withOpacity(0.9),
           child: ListTile(
             leading: _isSelectionMode
                 ? Checkbox(
-              value: isSelected,
-              onChanged: (bool? value) {
-                setState(() {
-                  if (value == true) {
-                    _selectedJokerIds.add(joker['id']);
-                  } else {
-                    _selectedJokerIds.remove(joker['id']);
-                  }
-                });
-              },
-            )
+                    value: isSelected,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        if (value == true) {
+                          _selectedJokerIds.add(joker['id']);
+                        } else {
+                          _selectedJokerIds.remove(joker['id']);
+                        }
+                      });
+                    },
+                  )
                 : null,
             title: Text(
               joker['message'],
@@ -397,19 +406,19 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
             ),
             trailing: !_isSelectionMode
                 ? Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.deepPurple),
-                  onPressed: () =>
-                      _showEditJokerDialog(joker['id'], joker['message']),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _deleteJoker(joker['id']),
-                ),
-              ],
-            )
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.deepPurple),
+                        onPressed: () =>
+                            _showEditJokerDialog(joker['id'], joker['message']),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => _deleteJoker(joker['id']),
+                      ),
+                    ],
+                  )
                 : null,
             onTap: () {
               if (_isSelectionMode) {
@@ -440,7 +449,8 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text('Yeni Joker Ekle'),
           content: TextField(
             controller: _jokerController,

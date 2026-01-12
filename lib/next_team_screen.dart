@@ -42,42 +42,41 @@ class NextTeamScreen extends StatelessWidget {
           automaticallyImplyLeading: false,
           elevation: 0,
         ),
-        body: Stack(
-          children: [
-            AnimatedContainer(
-              duration: const Duration(seconds: 10),
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [Colors.blue, Colors.lightBlueAccent, Colors.white],
-                  radius: 2,
-                  center: Alignment(-0.8, -0.5),
+        resizeToAvoidBottomInset: false,
+        body: SafeArea(
+          top: true,
+          bottom: true,
+          child: Stack(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(seconds: 10),
+                decoration: const BoxDecoration(
+                  gradient: RadialGradient(
+                    colors: [Colors.blue, Colors.lightBlueAccent, Colors.white],
+                    radius: 2,
+                    center: Alignment(-0.8, -0.5),
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildScoreboardCard(), // <-- Yeni: Güncel skorlar
-                    const SizedBox(height: 14),
-                    _buildInfoCard(),
-                    const SizedBox(height: 25),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        elevation: 10,
-                        textStyle: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildScoreboardCard(), // <-- Yeni: Güncel skorlar
+                      const SizedBox(height: 14),
+                      _buildInfoCard(),
+                      const SizedBox(height: 25),
+                      ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
                         ),
                       ),
                       child: const Text('Devam Et'),

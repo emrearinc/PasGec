@@ -29,7 +29,8 @@ class WinnerScreen extends StatefulWidget {
 
 class _WinnerScreenState extends State<WinnerScreen> {
   final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
-  bool _isSaved = false; // Kaydın yalnızca bir kez yapılmasını sağlamak için flag
+  bool _isSaved =
+      false; // Kaydın yalnızca bir kez yapılmasını sağlamak için flag
 
   @override
   void initState() {
@@ -44,12 +45,12 @@ class _WinnerScreenState extends State<WinnerScreen> {
     try {
       final int team1Score = widget.team1Performances.fold(
         0,
-            (int sum, PlayerPerformance player) => sum + player.correctCount,
+        (int sum, PlayerPerformance player) => sum + player.correctCount,
       );
 
       final int team2Score = widget.team2Performances.fold(
         0,
-            (int sum, PlayerPerformance player) => sum + player.correctCount,
+        (int sum, PlayerPerformance player) => sum + player.correctCount,
       );
 
       int gameId = await dbHelper.addGameRecord(
@@ -87,8 +88,10 @@ class _WinnerScreenState extends State<WinnerScreen> {
           'winning_team': widget.winningTeam,
           'team1_score': team1Score,
           'team2_score': team2Score,
-          'team1_players': widget.team1Performances.map((p) => p.playerName).join(', '),
-          'team2_players': widget.team2Performances.map((p) => p.playerName).join(', '),
+          'team1_players':
+              widget.team1Performances.map((p) => p.playerName).join(', '),
+          'team2_players':
+              widget.team2Performances.map((p) => p.playerName).join(', '),
         },
       );
 
@@ -97,11 +100,13 @@ class _WinnerScreenState extends State<WinnerScreen> {
         _isSaved = true;
       });
     } catch (e) {
-      await _showSaveGameResult("Veritabanına kaydedilirken hata oluştu: $e", isSuccess: false);
+      await _showSaveGameResult("Veritabanına kaydedilirken hata oluştu: $e",
+          isSuccess: false);
     }
   }
 
-  Future<void> _showSaveGameResult(String message, {bool isSuccess = true}) async {
+  Future<void> _showSaveGameResult(String message,
+      {bool isSuccess = true}) async {
     showDialog(
       context: context,
       builder: (context) {
@@ -154,17 +159,20 @@ class _WinnerScreenState extends State<WinnerScreen> {
           ),
           automaticallyImplyLeading: false, // AppBar'da geri butonunu kaldır
         ),
-        body: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.deepPurple, Colors.pinkAccent],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        resizeToAvoidBottomInset: false,
+        body: SafeArea(
+          top: true,
+          bottom: true,
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.deepPurple, Colors.pinkAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
-          ),
-          child: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
               child: Column(
@@ -180,11 +188,14 @@ class _WinnerScreenState extends State<WinnerScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
-                  _buildPerformanceCard(widget.team1Name, widget.team1Performances),
+                  _buildPerformanceCard(
+                      widget.team1Name, widget.team1Performances),
                   const SizedBox(height: 20),
-                  _buildPerformanceCard(widget.team2Name, widget.team2Performances),
+                  _buildPerformanceCard(
+                      widget.team2Name, widget.team2Performances),
                   const SizedBox(height: 30),
-                  _buildButton("Yeniden Oyna", Colors.green, widget.onPlayAgain),
+                  _buildButton(
+                      "Yeniden Oyna", Colors.green, widget.onPlayAgain),
                   const SizedBox(height: 15),
                   _buildButton("Ana Menü", Colors.red, widget.onMainMenu),
                 ],
@@ -196,7 +207,8 @@ class _WinnerScreenState extends State<WinnerScreen> {
     );
   }
 
-  Widget _buildPerformanceCard(String teamName, List<PlayerPerformance> performances) {
+  Widget _buildPerformanceCard(
+      String teamName, List<PlayerPerformance> performances) {
     return Card(
       elevation: 8,
       shape: RoundedRectangleBorder(
@@ -242,7 +254,8 @@ class _WinnerScreenState extends State<WinnerScreen> {
                       ),
                       const SizedBox(height: 5),
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10.0, horizontal: 15.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
