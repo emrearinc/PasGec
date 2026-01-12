@@ -24,10 +24,10 @@ class TeamSelectionScreen extends StatefulWidget {
 }
 
 class TeamSelectionScreenState extends State<TeamSelectionScreen> {
-  final _team1Controller = TextEditingController(text: "Siyah Takım");
+  final _team1Controller = TextEditingController(text: "Mavi Takım");
   final _team2Controller = TextEditingController(text: "Beyaz Takım");
   final List<TextEditingController> _team1PlayersControllers = List.generate(
-      4, (index) => TextEditingController(text: index == 0 ? "Siyah 1" : ""));
+      4, (index) => TextEditingController(text: index == 0 ? "Mavi 1" : ""));
   final List<TextEditingController> _team2PlayersControllers = List.generate(
       4, (index) => TextEditingController(text: index == 0 ? "Beyaz 1" : ""));
 

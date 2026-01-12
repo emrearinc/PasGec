@@ -1,26 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'joker.dart'; // joker.dart dosyasını import ediyoruz
-import 'dart:math';
-import 'next_team_screen.dart'; // Yeni ekranı import edin
-import 'package:auto_size_text/auto_size_text.dart';
+import 'next_team_screen.dart';
 import 'widgets/game_button_widget.dart';
 import 'widgets/score_card_widget.dart';
 import 'widgets/timer_widget.dart';
 import 'widgets/turn_indicator_widget.dart';
-import 'package:awesome_dialog/awesome_dialog.dart';
+import 'widgets/game_state_manager.dart';
+import 'widgets/game_audio_manager.dart';
+import 'widgets/game_dialogs.dart';
+import 'widgets/game_word_card.dart';
 import 'database_helper.dart';
 import 'package:vibration/vibration.dart';
-import 'package:audioplayers/audioplayers.dart';
-import 'package:tabu_oyunu/models/player_performance.dart';
 import 'package:tabu_oyunu/winner_screen.dart';
-import 'dart:developer' as developer; // Geliştirici günlükleme için
-import 'package:firebase_analytics/firebase_analytics.dart';
-
-late AudioPlayer audioPlayer; // Genel sesler için
-late AudioPlayer timerAudioPlayer; // Timer sesleri için
-
-bool isTimerSoundPlaying = false; // Timer sesi çalıyor mu kontrolü
 
 class GameScreen extends StatefulWidget {
   final List<String> team1Players;
@@ -30,10 +21,9 @@ class GameScreen extends StatefulWidget {
   final int gameTime;
   final int gameScore;
   final int passLimit;
-  final int tabooPenalty; // Tabu cezasını ekledik
+  final int tabooPenalty;
   final bool showJokers;
   final double jokerProbability;
-
 
   const GameScreen({
     super.key,
@@ -49,138 +39,59 @@ class GameScreen extends StatefulWidget {
     required this.jokerProbability,
   });
 
-
   @override
   GameScreenState createState() => GameScreenState();
 }
 
-// Veritabanından alınan kelimeleri saklamak için model sınıfı
-class Word {
-  final int id;
-  final String word;
-  final List<String> forbiddenWords;
-  final AudioPlayer audioPlayer = AudioPlayer();
-
-  Word({required this.id, required this.word, required this.forbiddenWords});
-
-  factory Word.fromMap(Map<String, dynamic> map) {
-    return Word(
-      id: map['id'],
-      word: map['word'],
-      forbiddenWords: (map['forbidden_words'] as String).split(', '),
-    );
-  }
-}
-
 class GameScreenState extends State<GameScreen> {
+  late GameStateManager gameState;
+  late GameAudioManager audioManager;
   List<Word> words = [];
-  int currentWordIndex = 0;
-  late int timerValue;
-  int team1Score = 0;
-  int team2Score = 0;
-  int currentTeam = 1;
-  int currentPassCount = 0;
-  Timer? timer;
-  bool isPaused = false;
-  bool isPassButtonDisabled = false;
-  bool isGameOver = false;
-  int correctCount = 0;
-  int tabooCount = 0;
-  int passCount = 0;
-  List<String> remainingJokers = []; // Kullanılabilir jokerlerin listesi
-  Set<String> usedJokers = {}; // Kullanılmış jokerlerin listesi
-  Duration? currentSoundPosition; // Sesin mevcut oynatma konumu
-  bool isPlayingSound = false; // Sesin çalıp çalmadığını kontrol etmek için
-  int currentPlayerIndexTeam1 = 0;
-  int currentPlayerIndexTeam2 = 0;
-
-  List<PlayerPerformance> team1Performances = [];
-  List<PlayerPerformance> team2Performances = [];
-  // Ortak ses çalma metodu
-  Future<void> playSound(String assetPath) async {
-    try {
-      developer.log('Ses dosyası çalınmaya çalışıldı: $assetPath');
-      await audioPlayer.stop(); // Mevcut sesi durdur
-      await audioPlayer.play(AssetSource(assetPath)); // Yeni sesi çal
-    } catch (e) {
-      developer.log('Ses çalınırken hata oluştu: $e'); // Hata loglama
-    }
-  }
-
 
   @override
   void initState() {
     super.initState();
 
-    // Performans listelerini oluştur ve sıfır değerlerle başlat
-    team1Performances = widget.team1Players
-        .map((player) => PlayerPerformance(
-      playerName: player,
-      correctCount: 0,
-      tabooCount: 0,
-      passCount: 0,
-    ))
-        .toList();
+    // GameStateManager'ı oluştur
+    gameState = GameStateManager(
+      team1Players: widget.team1Players,
+      team2Players: widget.team2Players,
+      team1Name: widget.team1Name,
+      team2Name: widget.team2Name,
+      gameTime: widget.gameTime,
+      gameScore: widget.gameScore,
+      passLimit: widget.passLimit,
+      tabooPenalty: widget.tabooPenalty,
+      showJokers: widget.showJokers,
+      jokerProbability: widget.jokerProbability,
+    );
 
-    team2Performances = widget.team2Players
-        .map((player) => PlayerPerformance(
-      playerName: player,
-      correctCount: 0,
-      tabooCount: 0,
-      passCount: 0,
-    ))
-        .toList();
-
-    // Zamanlayıcı ve diğer başlangıç değerlerini ayarla
-    timerValue = widget.gameTime;
-    currentPassCount = widget.passLimit;
-    isPassButtonDisabled = currentPassCount == 0;
+    // AudioManager'ı oluştur
+    audioManager = GameAudioManager();
 
     // Veritabanından kelimeleri yükle
     fetchWordsFromDatabase();
 
-    // Zamanlayıcıyı başlat
-    startTimer();
-
-    // Jokerleri sıfırla
-    _resetJokers();
-
-    // Ses oynatıcısını başlat
-    audioPlayer = AudioPlayer(); // Genel ses çalar
-    timerAudioPlayer = AudioPlayer(); // Timer ses çalar
+    // Timer'ı başlat
+    _startGame();
   }
-
 
   Future<void> fetchWordsFromDatabase() async {
     try {
-      // Sadece aktif kelimeleri getiren bir sorgu
-      final dbWords = await DatabaseHelper().getWords(where: 'is_active = ?', whereArgs: [1]);
+      final dbWords = await DatabaseHelper()
+          .getWords(where: 'is_active = ?', whereArgs: [1]);
 
       if (dbWords.isEmpty && mounted) {
-        // Eğer kelime bulunamazsa bir uyarı göster
-        showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text('Uyarı'),
-              content: const Text('Veritabanında aktif kelime bulunamadı!'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Tamam'),
-                ),
-              ],
-            );
-          },
-        );
+        await GameDialogs.showNoWordsDialog(context);
       }
 
       List<Word> loadedWords = dbWords.map((map) => Word.fromMap(map)).toList();
-      loadedWords.shuffle(); // Kelimeleri karıştır
+      loadedWords.shuffle();
 
       if (mounted) {
         setState(() {
           words = loadedWords;
+          gameState.words = loadedWords;
         });
       }
     } catch (e) {
@@ -195,460 +106,113 @@ class GameScreenState extends State<GameScreen> {
     }
   }
 
-
-
-  @override
-  void dispose() {
-    timer?.cancel();
-    audioPlayer.dispose(); // Genel ses çalarını temizle
-    timerAudioPlayer.dispose(); // Timer ses çalarını temizle
-    super.dispose();
+  void _startGame() {
+    gameState.startTimer(_onTimerTick, _onTimeUp);
   }
 
-  void startTimer() {
-    timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        if (timerValue > 0 && !isPaused) {
-          timerValue--;
-
-          // 5 saniye kaldığında timer.mp3 sesini çal
-          if (timerValue == 5 && !isTimerSoundPlaying) {
-            playTimerSound();
-          }
-        } else if (timerValue == 0 && !isGameOver) {
-          timer.cancel();
-          showTimeUpScreen();
-        }
-      });
-    });
-  }
-
-
-
-  String getCurrentPlayer() {
-    return currentTeam == 1
-        ? widget.team1Players[currentPlayerIndexTeam1]
-        : widget.team2Players[currentPlayerIndexTeam2];
-  }
-
-  String getNextPlayer() {
-    if (currentTeam == 1) {
-      // Eğer mevcut takım 1 ise, sıradaki takım 2'nin oyuncusunu döndür
-      int nextIndex = (currentPlayerIndexTeam2 + 1) % widget.team2Players.length;
-      return widget.team2Players[nextIndex];
-    } else {
-      // Eğer mevcut takım 2 ise, sıradaki takım 1'in oyuncusunu döndür
-      int nextIndex = (currentPlayerIndexTeam1 + 1) % widget.team1Players.length;
-      return widget.team1Players[nextIndex];
-    }
-  }
-  void updatePlayerPerformance(String playerName, {int correct = 0, int taboo = 0, int pass = 0}) {
+  void _onTimerTick() {
     setState(() {
-      List<PlayerPerformance> currentTeamPerformances = currentTeam == 1 ? team1Performances : team2Performances;
-
-      for (var performance in currentTeamPerformances) {
-        if (performance.playerName == playerName) {
-          performance.correctCount += correct;
-          performance.tabooCount += taboo;
-          performance.passCount += pass;
-          break;
-        }
-      }
-    });
-
-  }
-
-  void updatePlayerIndex() {
-    setState(() {
-      if (currentTeam == 1) {
-        currentPlayerIndexTeam1 = (currentPlayerIndexTeam1 + 1) % widget.team1Players.length;
-      } else {
-        currentPlayerIndexTeam2 = (currentPlayerIndexTeam2 + 1) % widget.team2Players.length;
+      // 5 saniye kaldığında timer sesini çal
+      if (gameState.timerValue == 5 && !audioManager.isTimerSoundPlaying) {
+        audioManager.playTimerSound();
       }
     });
   }
 
-// Timer sesini başlatma metodu
-  void playTimerSound() async {
-    if (!isTimerSoundPlaying) {
-      isTimerSoundPlaying = true;
-      try {
-        await timerAudioPlayer.setSource(AssetSource('sound/timer.MP3'));
-        await timerAudioPlayer.setReleaseMode(ReleaseMode.stop); // Tek seferlik çal
-        await timerAudioPlayer.resume(); // Timer sesini çal
-      } catch (e, stackTrace) {
-        developer.log(
-          'Timer sesi başlatılırken hata oluştu',
-          error: e,
-          stackTrace: stackTrace,
-        );
-      }
+  void _onTimeUp() {
+    if (!gameState.isGameOver) {
+      _showTimeUpScreen();
     }
   }
 
-
-  void incrementCorrect() {
-    updatePlayerPerformance(getCurrentPlayer(), correct: 1);
-    setState(() {
-      correctCount++;
-      if (currentTeam == 1) {
-        team1Score++;
-      } else {
-        team2Score++;
-      }
-      playSound('sound/dogru.MP3');
-      checkWinCondition();
-      nextWord();
-    });
-  }
-
-  void incrementTaboo() {
-    updatePlayerPerformance(getCurrentPlayer(), taboo: 1);
-
-    setState(() {
-      tabooCount++;
-      if (currentTeam == 1) {
-        team1Score -= widget.tabooPenalty; // Seçilen tabu cezası kadar puan düş
-      } else {
-        team2Score -= widget.tabooPenalty; // Seçilen tabu cezası kadar puan düş
-      }
-      playSound('sound/tabu.MP3');
-
-      // Titreşim ekle
-      Vibration.vibrate(duration: 200); // 500ms titreşim
-
-      nextWord(); // Bir sonraki kelimeye geç
-    });
-  }
-
-
-
-  void incrementPass() {
-    updatePlayerPerformance(getCurrentPlayer(), pass: 1);
-
-    setState(() {
-      if (currentPassCount > 0) {
-        passCount++;
-        currentPassCount--;
-        isPassButtonDisabled = currentPassCount == 0; // Pas hakkı biterse butonu devre dışı bırak
-        playSound('sound/pas.MP3');
-
-        nextWord(); // Bir sonraki kelimeye geç
-      } else {
-        // Pop-up gösterme ve timer'ın devam etmesini sağlama
-        showDialog(
-          context: context,
-          barrierDismissible: true, // Kullanıcı boşluğa tıklarsa pop-up kapanır
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Pas Hakkınız Bitti!'),
-              content: const Text('Pas hakkınız kalmadı. Oyuna devam edebilirsiniz.'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Pop-up'ı kapat
-                  },
-                  child: const Text('Tamam'),
-                ),
-              ],
-            );
-          },
-        ).then((_) {
-          // Pop-up kapandıktan sonra timer devam etsin
-          resumeTimer();
-        });
-      }
-    });
-  }
-
-
-  void resetCounts() {
-    correctCount = 0;
-    tabooCount = 0;
-    passCount = 0;
-    isGameOver = false; // Yeni tur için isGameOver'ı sıfırlıyoruz
-  }
-
-
-  void showTimeUpScreen() {
-    if (isGameOver) return;
+  void _showTimeUpScreen() {
+    if (gameState.isGameOver) return;
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => NextTeamScreen(
-          currentTeam: currentTeam == 1 ? widget.team1Name : widget.team2Name,
-          nextTeam: currentTeam == 1 ? widget.team2Name : widget.team1Name,
-          currentPlayer: getCurrentPlayer(),
-          nextPlayer: getNextPlayer(),
-          correctCount: correctCount,
-          tabooCount: tabooCount,
-          passCount: passCount,
+          currentTeam:
+              gameState.currentTeam == 1 ? widget.team1Name : widget.team2Name,
+          nextTeam:
+              gameState.currentTeam == 1 ? widget.team2Name : widget.team1Name,
+          currentPlayer: gameState.getCurrentPlayer(),
+          nextPlayer: gameState.getNextPlayer(),
+          correctCount: gameState.correctCount,
+          tabooCount: gameState.tabooCount,
+          passCount: gameState.passCount,
+          currentTeamScore: gameState.team1Score,
+          nextTeamScore: gameState.team2Score,
         ),
       ),
     ).then((result) {
       if (result == true) {
-        resetCounts();
-        switchTurn();
-        nextWord();
+        gameState.resetCounts();
+        gameState.switchTurn();
+        gameState.nextWord();
+        gameState.resetTimer();
+        _startGame();
+        setState(() {});
+        _showJokerIfNeeded();
       }
     });
   }
 
-
-  void switchTurn() {
-    setState(() {
-      currentTeam = currentTeam == 1 ? 2 : 1;
-
-      if (currentTeam == 1) {
-        currentPlayerIndexTeam1 = (currentPlayerIndexTeam1 + 1) % widget.team1Players.length;
-      } else {
-        currentPlayerIndexTeam2 = (currentPlayerIndexTeam2 + 1) % widget.team2Players.length;
-      }
-
-      currentPassCount = widget.passLimit;
-      isPassButtonDisabled = currentPassCount == 0;
-
-      resetTimer(); // Timer ve ses sıfırlama
-      showJokerMessage();
-    });
-  }
-
-
-  void resetTimer() {
-    setState(() {
-      timerValue = widget.gameTime;
-      isTimerSoundPlaying = false; // Timer sesinin yeniden çalınmasına izin ver
-    });
-    startTimer();
-  }
-
-
-  void pauseTimer() {
-    if (!isPaused) {
-      setState(() {
-        isPaused = true;
-      });
-      timer?.cancel(); // Mevcut zamanlayıcıyı durdur
-      timer = null; // Zamanlayıcı referansını sıfırla
-
-      // Ses çalıyorsa durdur
-      if (timerValue <= 10) {
-        stopTimerSound();
-      }
-    }
-  }
-
-
-  void resumeTimer() {
-    if (isPaused) {
-      setState(() {
-        isPaused = false;
-      });
-      if (timer == null) {
-        startTimer(); // Zamanlayıcıyı yeniden başlat
-      }
-
-      // 10 saniye kaldıysa sesi yeniden başlat
-      if (timerValue <= 5) {
-        playTimerSound();
-      }
-    }
-  }
-
-
-// Timer sesini durdurma metodu (gerekirse kullanılır)
-  void stopTimerSound() async {
-    if (isTimerSoundPlaying) {
-      try {
-        await timerAudioPlayer.stop();
-        isTimerSoundPlaying = false;
-      } catch (e, stackTrace) {
-        developer.log(
-          'Timer sesi durdurulurken hata oluştu',
-          error: e,
-          stackTrace: stackTrace,
-        );
-      }
-    }
-  }
-// Genel sesleri çalarken timer sesini etkileme
-  Future<void> playGeneralSound(String assetPath) async {
-    try {
-      developer.log('Ses dosyası çalınmaya çalışılıyor: $assetPath');
-      await audioPlayer.setSource(AssetSource(assetPath));
-      await audioPlayer.resume();
-    } catch (e) {
-      developer.log('Ses çalınırken hata oluştu: $e');
-    }
-  }
-
-  void resumeTimerSound() async {
-    try {
-      if (currentSoundPosition != null) {
-        await audioPlayer.seek(currentSoundPosition!); // Kaldığı yerden devam et
-        await audioPlayer.resume();
-        isPlayingSound = true;
-      }
-    } catch (e, stackTrace) {
-      developer.log(
-        'Ses yeniden başlatılırken hata oluştu',
-        error: e,
-        stackTrace: stackTrace,
+  void _showJokerIfNeeded() {
+    if (gameState.shouldShowJoker()) {
+      gameState.pauseTimer();
+      GameDialogs.showJokerDialog(
+        context,
+        onClose: () {
+          gameState.resumeTimer(_onTimerTick, _onTimeUp);
+        },
       );
     }
   }
 
-  bool shouldShowJoker() {
-    if (!widget.showJokers) return false; // Bu kontrol zaten `showJokerMessage` içinde yapılıyor.
-    Random random = Random();
-    return random.nextDouble() < widget.jokerProbability;
+  void _handleCorrect() async {
+    gameState.incrementCorrect();
+    setState(() {});
+    await audioManager.playCorrectSound();
+    _checkWinCondition();
+    await gameState.nextWord();
+    setState(() {});
   }
 
-
-
-  // Jokerleri sıfırlar ve kullanılabilir joker listesine atar
-  void _resetJokers() {
-    if (!widget.showJokers || Random().nextDouble() >= widget.jokerProbability) return;
-
+  void _handleTaboo() async {
+    gameState.incrementTaboo();
+    setState(() {});
+    await audioManager.playTabooSound();
+    Vibration.vibrate(duration: 200);
+    await gameState.nextWord();
+    setState(() {});
   }
 
-  void showJokerMessage() async {
-    if (!widget.showJokers) return;
-
-    // Joker gösterim olasılığını ayarlar üzerinden kontrol et
-    if (Random().nextDouble() >= widget.jokerProbability) return;
-
-    // Joker mesajını getir
-    String? jokerMessage = await Joker.getRandomJoker();
-
-    // Ekranın hala mounted olup olmadığını kontrol et
-    if (mounted && jokerMessage != null) {
-      pauseTimer();
-
-      // Rastgele animasyon, ikon ve diyalog tipi seçimi
-      final List<AnimType> animations = [
-        AnimType.scale,
-        AnimType.leftSlide,
-        AnimType.bottomSlide,
-      ];
-      final List<DialogType> dialogTypes = [
-        DialogType.info,
-        DialogType.warning,
-        DialogType.noHeader,
-      ];
-      final List<IconData> icons = [
-        Icons.casino,
-        Icons.star,
-        Icons.card_giftcard,
-      ];
-
-      final random = Random();
-      final AnimType selectedAnimation = animations[random.nextInt(animations.length)];
-      final DialogType selectedDialog = dialogTypes[random.nextInt(dialogTypes.length)];
-      final IconData selectedIcon = icons[random.nextInt(icons.length)];
-
-      // Joker mesajını göster
-      AwesomeDialog(
-        context: context,
-        dialogType: selectedDialog,
-        animType: selectedAnimation,
-        customHeader: Icon(
-          selectedIcon,
-          color: Colors.orange,
-          size: 50,
-        ),
-        title: 'Joker!',
-        desc: jokerMessage, // Joker mesajını ekle
-        btnOkText: 'Devam Et',
-        btnOkOnPress: () {
-          resumeTimer();
-        },
-      ).show();
+  void _handlePass() async {
+    if (gameState.currentPassCount > 0) {
+      gameState.incrementPass();
+      setState(() {});
+      await audioManager.playPassSound();
+      await gameState.nextWord();
+      setState(() {});
+    } else {
+      gameState.pauseTimer();
+      await GameDialogs.showPassLimitDialog(context, () {
+        gameState.resumeTimer(_onTimerTick, _onTimeUp);
+      });
     }
   }
 
+  void _checkWinCondition() {
+    if (gameState.team1Score >= widget.gameScore ||
+        gameState.team2Score >= widget.gameScore) {
+      String winningTeam = gameState.team1Score >= widget.gameScore
+          ? widget.team1Name
+          : widget.team2Name;
+      gameState.isGameOver = true;
+      gameState.timer?.cancel();
+      audioManager.stopTimerSound();
 
-
-  void resetGame() {
-    setState(() {
-      team1Score = 0;
-      team2Score = 0;
-      currentWordIndex = 0;
-      currentTeam = 1;
-      timerValue = widget.gameTime;
-      currentPassCount = widget.passLimit;
-      isPassButtonDisabled = currentPassCount == 0;
-      correctCount = 0;
-      tabooCount = 0;
-      passCount = 0;
-      isGameOver = false;
-      _resetJokers(); // Jokerleri sıfırla
-
-      // Performansları sıfırla
-      resetPerformances();
-    });
-
-    timer?.cancel();
-    startTimer();
-    Navigator.pop(context); // Kazanan ekranından çıkış
-  }
-
-  void incrementScore(int teamNumber) {
-    setState(() {
-      if (teamNumber == 1) {
-        team1Score++;
-      } else {
-        team2Score++;
-      }
-      checkWinCondition();
-      nextWord();
-    });
-  }
-
-  void decrementScore(int teamNumber) {
-    setState(() {
-      if (teamNumber == 1) {
-        team1Score--; // 1. takımın skoru negatif değerlere düşebilir
-      } else if (teamNumber == 2) {
-        team2Score--; // 2. takımın skoru negatif değerlere düşebilir
-      }
-      nextWord();
-    });
-  }
-
-  Set<int> usedWordIndexes = {};
-
-  void nextWord() async {
-    setState(() {
-      if (usedWordIndexes.length == words.length) {
-        usedWordIndexes.clear();
-      }
-      do {
-        currentWordIndex = Random().nextInt(words.length);
-      } while (usedWordIndexes.contains(currentWordIndex));
-      usedWordIndexes.add(currentWordIndex);
-    });
-
-    // Firebase Analytics olayı
-    await FirebaseAnalytics.instance.logEvent(
-      name: 'word_displayed',
-      parameters: {
-        'word': words[currentWordIndex].word,
-      },
-    );
-  }
-
-
-
-
-
-  void checkWinCondition() {
-    if (team1Score >= widget.gameScore || team2Score >= widget.gameScore) {
-      String winningTeam = team1Score >= widget.gameScore ? widget.team1Name : widget.team2Name;
-      isGameOver = true;
-      timer?.cancel();
-      stopTimerSound(); // Timer sesini durdur
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -656,9 +220,9 @@ class GameScreenState extends State<GameScreen> {
             winningTeam: winningTeam,
             team1Name: widget.team1Name,
             team2Name: widget.team2Name,
-            team1Performances: team1Performances,
-            team2Performances: team2Performances,
-            onPlayAgain: resetGame,
+            team1Performances: gameState.team1Performances,
+            team2Performances: gameState.team2Performances,
+            onPlayAgain: _resetAndPlay,
             onMainMenu: () {
               Navigator.popUntil(context, (route) => route.isFirst);
             },
@@ -668,406 +232,47 @@ class GameScreenState extends State<GameScreen> {
     }
   }
 
-
-  void resetPerformances() {
-    setState(() {
-      // Performans listelerini sıfırla
-      team1Performances = widget.team1Players
-          .map((player) => PlayerPerformance(
-        playerName: player,
-        correctCount: 0,
-        tabooCount: 0,
-        passCount: 0,
-      ))
-          .toList();
-
-      team2Performances = widget.team2Players
-          .map((player) => PlayerPerformance(
-        playerName: player,
-        correctCount: 0,
-        tabooCount: 0,
-        passCount: 0,
-      ))
-          .toList();
-    });
+  void _resetAndPlay() {
+    gameState.resetGame();
+    _startGame();
+    setState(() {});
+    Navigator.pop(context);
   }
 
-
-
-  void showWinningDialog(String winningTeam) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text('$winningTeam Kazandı!'),
-        content: const Text('Tebrikler, kazanan takım belli oldu. Oyun başa dönecek.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              resetGame();
-            },
-            child: const Text('Tamam'),
-          ),
-        ],
-      ),
-    );
-  }
-
-
-
-  void showPauseScreen() {
-    if (!isPaused) {
-      pauseTimer(); // Timer'ı durdur
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: true, // Kullanıcı arka plana tıklarsa kapatılabilir
-      barrierColor: Colors.black.withOpacity(0.9), // Karanlık arka plan
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(25), // Yuvarlatılmış köşeler
-          ),
-          elevation: 12,
-          backgroundColor: Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.pause_circle_filled,
-                  size: 60,
-                  color: Colors.deepPurple,
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Oyun Durduruldu',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 15),
-                const Text(
-                  'Oyun şu an duraklatıldı. Devam etmek ister misiniz?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 25),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pop(); // Diyalog kapat
-                        resumeTimer(); // Timer'ı yeniden başlat
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 10,
-                          horizontal: 20,
-                        ),
-                        backgroundColor: Colors.green,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 5,
-                      ),
-                      icon: const Icon(
-                        Icons.play_arrow,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                      label: const Text(
-                        'Devam!',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pop(); // Diyalog kapat
-                        confirmExit(); // Çıkış ekranını aç
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 10,
-                          horizontal: 20,
-                        ),
-                        backgroundColor: Colors.redAccent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 5,
-                      ),
-                      icon: const Icon(
-                        Icons.home,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                      label: const Text(
-                        'Menüye Dön',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
+  void _pauseGame() {
+    gameState.pauseTimer();
+    GameDialogs.showPauseDialog(
+      context,
+      onResume: () {
+        gameState.resumeTimer(_onTimerTick, _onTimeUp);
       },
-    ).then((value) {
-      // Diyalog kapandığında ve oyun duraklatıldıysa süreyi yeniden başlat
-      if (isPaused) {
-        resumeTimer();
+      onExit: _confirmExit,
+    ).then((_) {
+      if (gameState.isPaused) {
+        gameState.resumeTimer(_onTimerTick, _onTimeUp);
       }
     });
   }
 
-  void confirmExit() {
-    pauseTimer(); // Timer'ı durdur
-
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.3),
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(25),
-          ),
-          elevation: 12,
-          backgroundColor: Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(25.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.warning_rounded,
-                  size: 80,
-                  color: Colors.redAccent,
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Ana Menüye Dön',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 15),
-                const Text(
-                  'Ana menüye dönmek istediğinize emin misiniz?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pop(); // Diyalog kapat
-                        resumeTimer(); // Timer'ı yeniden başlat
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 25),
-                        backgroundColor: Colors.grey[300],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        elevation: 5,
-                      ),
-                      icon: const Icon(
-                        Icons.close,
-                        color: Colors.black,
-                      ),
-                      label: const Text(
-                        'Hayır',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        stopTimerSound(); // Ses çalmayı durdur
-                        Navigator.of(context).popUntil((route) => route.isFirst); // Ana menüye dön
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 25),
-                        backgroundColor: Colors.redAccent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        elevation: 5,
-                      ),
-                      icon: const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                      ),
-                      label: const Text(
-                        'Evet',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
+  void _confirmExit() {
+    gameState.pauseTimer();
+    GameDialogs.showExitConfirmDialog(
+      context,
+      onConfirm: () {
+        audioManager.stopTimerSound();
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      },
+      onCancel: () {
+        gameState.resumeTimer(_onTimerTick, _onTimeUp);
       },
     ).then((_) {
-      // Diyalog kapandığında ve oyun duraklatılmışsa timer yeniden başlatılır
-      if (isPaused) {
-        resumeTimer();
+      if (gameState.isPaused) {
+        gameState.resumeTimer(_onTimerTick, _onTimeUp);
       }
     });
   }
 
-// Onay diyaloğunu gösteren yardımcı metot
-// Onay diyaloğunu gösteren yardımcı metot
-  Future<bool> showExitConfirmationDialog(BuildContext context) async {
-    final bool? shouldExit = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.3),
-      builder: (BuildContext dialogContext) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(25),
-          ),
-          elevation: 12,
-          backgroundColor: Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(25.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // İkon
-                const Icon(
-                  Icons.warning_amber_rounded,
-                  size: 80,
-                  color: Colors.redAccent,
-                ),
-                const SizedBox(height: 20),
-
-                // Başlık
-                const Text(
-                  'Çıkış Onayı',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 15),
-
-                // Açıklama Metni
-                const Text(
-                  'Takım seçimi ekranına dönmek istediğinize emin misiniz?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                // Butonlar
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // Hayır Butonu
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(dialogContext).pop(false); // Diyalog kapat
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 25),
-                        backgroundColor: Colors.grey[300],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        elevation: 5,
-                      ),
-                      icon: const Icon(
-                        Icons.close,
-                        color: Colors.black,
-                      ),
-                      label: const Text(
-                        'Hayır',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    // Evet Butonu
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(dialogContext).pop(true); // Ana menüye dön
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 25),
-                        backgroundColor: Colors.green,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        elevation: 5,
-                      ),
-                      icon: const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                      ),
-                      label: const Text(
-                        'Evet',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-    return shouldExit ?? false;
-  }
-
-
-// AppBar Oluşturucu
-// AppBar Oluşturucu
-  PreferredSizeWidget buildAppBar() {
+  PreferredSizeWidget _buildAppBar() {
     return AppBar(
       centerTitle: true,
       backgroundColor: Colors.transparent,
@@ -1093,25 +298,20 @@ class GameScreenState extends State<GameScreen> {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 35,
-            color: Colors.white, // Gradient nedeniyle bu beyaz renk görünmez
+            color: Colors.white,
           ),
         ),
       ),
       actions: [
         IconButton(
           icon: const Icon(Icons.pause),
-          onPressed: () {
-            pauseTimer();
-            showPauseScreen();
-          },
+          onPressed: _pauseGame,
         ),
       ],
     );
   }
 
-
-// Ana İçerik
-  Widget buildBody(BuildContext context) {
+  Widget _buildBody() {
     if (words.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(
@@ -1119,6 +319,7 @@ class GameScreenState extends State<GameScreen> {
         ),
       );
     }
+
     return Column(
       children: [
         Expanded(
@@ -1131,7 +332,8 @@ class GameScreenState extends State<GameScreen> {
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 1.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10.0, vertical: 1.0),
               child: ListView(
                 children: [
                   Row(
@@ -1140,40 +342,39 @@ class GameScreenState extends State<GameScreen> {
                       Expanded(
                         child: ScoreCardWidget(
                           teamName: widget.team1Name,
-                          score: team1Score,
+                          score: gameState.team1Score,
                         ),
                       ),
                       Expanded(
                         child: ScoreCardWidget(
                           teamName: widget.team2Name,
-                          score: team2Score,
+                          score: gameState.team2Score,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 3),
                   TurnIndicatorWidget(
-                    currentTeamName: currentTeam == 1
+                    currentTeamName: gameState.currentTeam == 1
                         ? widget.team1Name
                         : widget.team2Name,
-                    currentPlayerName: getCurrentPlayer(),
+                    currentPlayerName: gameState.getCurrentPlayer(),
                   ),
                   const SizedBox(height: 0),
-                  TimerWidget(timerValue: timerValue),
+                  TimerWidget(timerValue: gameState.timerValue),
                   const SizedBox(height: 1),
-                  _buildWordCard(words[currentWordIndex]),
+                  GameWordCard(word: words[gameState.currentWordIndex]),
                 ],
               ),
             ),
           ),
         ),
-        buildFooterButtons(),
+        _buildFooterButtons(),
       ],
     );
   }
 
-// Alt Butonları Oluşturucu
-  Widget buildFooterButtons() {
+  Widget _buildFooterButtons() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2.0),
       child: Row(
@@ -1183,8 +384,8 @@ class GameScreenState extends State<GameScreen> {
             child: GameButtonWidget(
               label: 'Pas',
               icon: Icons.skip_next,
-              color: isPassButtonDisabled ? Colors.grey : Colors.blue,
-              onPressed: isPassButtonDisabled ? () {} : incrementPass,
+              color: gameState.isPassButtonDisabled ? Colors.grey : Colors.blue,
+              onPressed: gameState.isPassButtonDisabled ? () {} : _handlePass,
             ),
           ),
           Expanded(
@@ -1192,7 +393,7 @@ class GameScreenState extends State<GameScreen> {
               label: 'Tabu',
               icon: Icons.cancel,
               color: Colors.red,
-              onPressed: incrementTaboo,
+              onPressed: _handleTaboo,
             ),
           ),
           Expanded(
@@ -1200,7 +401,7 @@ class GameScreenState extends State<GameScreen> {
               label: 'Doğru',
               icon: Icons.check_circle,
               color: Colors.green,
-              onPressed: incrementCorrect,
+              onPressed: _handleCorrect,
             ),
           ),
         ],
@@ -1209,89 +410,22 @@ class GameScreenState extends State<GameScreen> {
   }
 
   @override
+  void dispose() {
+    gameState.dispose();
+    audioManager.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        final bool shouldExit = await showExitConfirmationDialog(context);
-        return shouldExit;
+        return await GameDialogs.showExitConfirmationDialog(context);
       },
       child: Scaffold(
-        appBar: buildAppBar(),
+        appBar: _buildAppBar(),
         extendBodyBehindAppBar: true,
-        body: buildBody(context),
-      ),
-    );
-  }
-
-
-
-
-
-
-
-
-  Widget _buildWordCard(Word word) {
-    return Center(
-      child: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.9,
-        child: Card(
-          elevation: 8,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          color: Colors.white.withOpacity(0.9),
-          child: Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AutoSizeText(
-                  word.word,
-                  style: const TextStyle(
-                    fontSize: 45,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.deepPurple,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const Divider(
-                  height: 5,
-                  color: Colors.deepPurple,
-                  thickness: 1.5,
-                ),
-                Column(
-                  children: word.forbiddenWords.map((forbiddenWord) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.deepPurple.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(45),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(5.0),
-                          child: Center(
-                            child: AutoSizeText(
-                              forbiddenWord,
-                              style: TextStyle(
-                                fontSize: 25,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.deepPurple.shade700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-          ),
-        ),
+        body: _buildBody(),
       ),
     );
   }

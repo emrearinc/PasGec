@@ -1,13 +1,20 @@
+// File: lib/home_screen.dart
+// Screen: Home
+// Purpose: Ana ekran + sağ altta versiyon/pack/kelime sayısı. Yazıya dokununca force sync yapar.
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:package_info_plus/package_info_plus.dart'; // Versiyon bilgisi için
-import 'package:awesome_notifications/awesome_notifications.dart'; // Bildirimler için
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
+
 import 'team_selection_screen.dart';
 import 'settings_screen.dart';
 import 'words_screen.dart';
 import 'how_to_play_screen.dart';
 import 'scores_screen.dart';
 import 'joker_management_screen.dart';
+import 'database_helper.dart';
+import 'words_pack_updater.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,17 +31,23 @@ class HomeScreenState extends State<HomeScreen> {
   bool _showJokers = true;
   double _jokerProbability = 0.3;
 
-  String _appVersion = ''; // Versiyon bilgisi
+  String _appVersion = '';
+
+  int _wordCount = 0;
+  int _packVersion = 0;
+  bool _dbInfoLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
     _loadAppVersion();
+    _loadDbInfo();
   }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _gameScore = prefs.getInt('gameScore') ?? 25;
       _gameTime = prefs.getInt('gameTime') ?? 60;
@@ -47,24 +60,50 @@ class HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadAppVersion() async {
     final packageInfo = await PackageInfo.fromPlatform();
+    if (!mounted) return;
     setState(() {
       _appVersion = 'v${packageInfo.version}+${packageInfo.buildNumber}';
     });
   }
-  void _sendWelcomeNotification() {
-    AwesomeNotifications().createNotification(
-      content: NotificationContent(
-        id: 1,
-        channelKey: 'basic_channel',
-        title: 'Pas Geç Uygulamasına Hoş Geldiniz!',
-        body: 'Oyuna başlamadan önce ayarlarınızı kontrol etmeyi unutmayın!',
-        notificationLayout: NotificationLayout.Default,
-      ),
-    ).then((_) {
-      print('Bildirim gönderildi.');
-    }).catchError((error) {
-      print('Bildirim gönderilirken hata oluştu: $error');
-    });
+
+  Future<void> _loadDbInfo() async {
+    try {
+      final db = DatabaseHelper();
+      final count = await db.getWordCount();
+      final v = await db.getLocalPackVersion();
+      if (!mounted) return;
+      setState(() {
+        _wordCount = count;
+        _packVersion = v;
+        _dbInfoLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _dbInfoLoading = false;
+      });
+    }
+  }
+
+  Future<void> _forceSyncPack() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Kelime paketi kontrol ediliyor...')),
+    );
+
+    try {
+      await WordsPackUpdater().forceSync();
+      await _loadDbInfo();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tamam. pack:$_packVersion • words:$_wordCount')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sync hata: $e')),
+      );
+    }
   }
 
   @override
@@ -72,12 +111,12 @@ class HomeScreenState extends State<HomeScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    int crossAxisCount = screenWidth > 600 ? 3 : 2;
+    final int crossAxisCount = screenWidth > 600 ? 3 : 2;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: SafeArea(
-        top: false, // Üst boşluğu iptal eder
+        top: false,
         child: Stack(
           children: [
             Container(
@@ -86,9 +125,9 @@ class HomeScreenState extends State<HomeScreen> {
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Color(0xFF4A148C), // Daha koyu mor
-                    Color(0xFFCE93D8), // Açık mor
-                    Color(0xFFBA68C8), // Orta mor tonu
+                    Color(0xFF4A148C),
+                    Color(0xFFCE93D8),
+                    Color(0xFFBA68C8),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -125,9 +164,7 @@ class HomeScreenState extends State<HomeScreen> {
                             label: _getCardLabel(index),
                             icon: _getCardIcon(index),
                             color: _getCardColor(index),
-                            onPressed: () {
-                              _navigateToScreen(index);
-                            },
+                            onPressed: () => _navigateToScreen(index),
                           );
                         },
                       ),
@@ -137,16 +174,22 @@ class HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+
             Align(
               alignment: Alignment.bottomRight,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  _appVersion, // Versiyon bilgisi
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white70,
+                child: GestureDetector(
+                  onTap: _forceSyncPack,
+                  child: Text(
+                    _dbInfoLoading
+                        ? '$_appVersion • sync...'
+                        : '$_appVersion • pack:$_packVersion • words:$_wordCount (dokun)',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white70,
+                    ),
                   ),
                 ),
               ),
@@ -216,7 +259,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   void _navigateToScreen(int index) {
     switch (index) {
-      case 0: // Oyuna Başla
+      case 0:
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -231,40 +274,27 @@ class HomeScreenState extends State<HomeScreen> {
           ),
         );
         break;
-      case 1: // Ayarlar
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const SettingsScreen(),
-          ),
-        ).then((value) {
-          // Ayarlardan döndükten sonra ayarları yeniden yükle
-          _loadSettings();
-        });
+
+      case 1:
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()))
+            .then((_) => _loadSettings());
         break;
-      case 2: // Kelimeleri Yönet
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const WordsScreen()),
-        );
+
+      case 2:
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const WordsScreen()))
+            .then((_) => _loadDbInfo());
         break;
-      case 3: // Nasıl Oynanır
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const HowToPlayScreen()),
-        );
+
+      case 3:
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const HowToPlayScreen()));
         break;
-      case 4: // Skorlar
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ScoresScreen()),
-        );
+
+      case 4:
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const ScoresScreen()));
         break;
-      case 5: // Jokerleri Yönet
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const JokerManagementScreen()),
-        );
+
+      case 5:
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const JokerManagementScreen()));
         break;
     }
   }
@@ -287,20 +317,12 @@ class HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: MediaQuery.of(context).size.width * 0.08,
-                color: Colors.white,
-              ),
+              Icon(icon, size: MediaQuery.of(context).size.width * 0.08, color: Colors.white),
               const SizedBox(height: 10),
               Text(
                 label,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ],
           ),

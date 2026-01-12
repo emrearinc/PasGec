@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
   cupertino_icons: ^1.0.8
   auto_size_text: ^3.0.0
   awesome_dialog: ^3.2.1
@@ -17,11 +18,16 @@ dependencies:
   path: ^1.8.0
   vibration: ^2.0.1
   audioplayers: ^6.1.0
-  shared_preferences: ^2.2.0 # Mevcut en son sürümü kullanın
-  sqflite_sqlcipher: ^2.0.0 # En güncel sürümü kullanın
+  shared_preferences: ^2.2.0
+  sqflite_sqlcipher: ^2.0.0
   flutter_secure_storage: ^9.0.0
-  package_info_plus: ^8.1.1 # En güncel sürümünü kontrol edin
-  awesome_notifications: ^0.10.0
+  package_info_plus: ^8.1.1
+  cloud_firestore: ^5.5.0
+  http: ^1.2.2
+  archive: ^3.6.1
+
+  awesome_notifications: ^0.10.1
+
   firebase_analytics: ^11.3.5
   firebase_core: ^3.8.0
 

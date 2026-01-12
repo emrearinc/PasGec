@@ -3,11 +3,17 @@ import 'package:flutter/material.dart';
 class NextTeamScreen extends StatelessWidget {
   final String currentTeam;
   final String nextTeam;
-  final String currentPlayer; // Mevcut takımın oyuncusu
-  final String nextPlayer; // Sıradaki takımın oyuncusu
+  final String currentPlayer;
+  final String nextPlayer;
+
+  // Tur istatistikleri (mevcut turun)
   final int correctCount;
   final int tabooCount;
   final int passCount;
+
+  // Yeni: Takımların toplam skorları (o ana kadar)
+  final int currentTeamScore;
+  final int nextTeamScore;
 
   const NextTeamScreen({
     super.key,
@@ -18,15 +24,14 @@ class NextTeamScreen extends StatelessWidget {
     required this.correctCount,
     required this.tabooCount,
     required this.passCount,
+    required this.currentTeamScore,
+    required this.nextTeamScore,
   });
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async {
-        // Geri tuşuna basıldığında hiçbir şey yapmamak için false döndür
-        return false;
-      },
+      onWillPop: () async => false,
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: AppBar(
@@ -39,7 +44,6 @@ class NextTeamScreen extends StatelessWidget {
         ),
         body: Stack(
           children: [
-            // **Yaratıcı Arka Plan**
             AnimatedContainer(
               duration: const Duration(seconds: 10),
               decoration: const BoxDecoration(
@@ -57,14 +61,12 @@ class NextTeamScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // **Bilgi Kartı**
+                    _buildScoreboardCard(), // <-- Yeni: Güncel skorlar
+                    const SizedBox(height: 14),
                     _buildInfoCard(),
                     const SizedBox(height: 25),
-                    // **Devam Et Butonu**
                     ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(true);
-                      },
+                      onPressed: () => Navigator.of(context).pop(true),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.teal,
                         foregroundColor: Colors.white,
@@ -90,7 +92,96 @@ class NextTeamScreen extends StatelessWidget {
     );
   }
 
-  // **Bilgi Kartı Metodu**
+  /// Yeni: Güncel skor kartı
+  Widget _buildScoreboardCard() {
+    return Card(
+      elevation: 12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(25),
+      ),
+      shadowColor: Colors.black45,
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(25),
+          color: Colors.white.withOpacity(0.9),
+        ),
+        child: Column(
+          children: [
+            Text(
+              'Güncel Skorlar',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple.withOpacity(0.8),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildScoreBox(
+                    title: currentTeam,
+                    score: currentTeamScore,
+                    color: Colors.teal,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildScoreBox(
+                    title: nextTeam,
+                    score: nextTeamScore,
+                    color: Colors.blueAccent,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScoreBox({
+    required String title,
+    required int score,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withOpacity(0.35), width: 1.2),
+      ),
+      child: Column(
+        children: [
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color.withOpacity(0.9),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            score.toString(),
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Mevcut: Bilgi kartı
   Widget _buildInfoCard() {
     return Card(
       elevation: 12,
@@ -107,7 +198,6 @@ class NextTeamScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Mevcut Takım ve Oyuncu Bilgisi
             _buildTeamInfo(
               title: 'Mevcut Takım ve Oyuncu',
               team: currentTeam,
@@ -115,7 +205,6 @@ class NextTeamScreen extends StatelessWidget {
               color: Colors.teal,
             ),
             const SizedBox(height: 16),
-            // Sıradaki Takım ve Oyuncu Bilgisi
             _buildTeamInfo(
               title: 'Sıradaki Takım ve Oyuncu',
               team: nextTeam,
@@ -127,7 +216,6 @@ class NextTeamScreen extends StatelessWidget {
               thickness: 1.5,
               height: 30,
             ),
-            // Ek Bilgi Satırları
             _buildInfoRow('Doğru Sayısı', correctCount.toString()),
             const SizedBox(height: 8),
             _buildInfoRow('Tabu Sayısı', tabooCount.toString()),
@@ -139,7 +227,6 @@ class NextTeamScreen extends StatelessWidget {
     );
   }
 
-  // Takım ve oyuncu bilgisi için yardımcı metod
   Widget _buildTeamInfo({
     required String title,
     required String team,
@@ -169,7 +256,6 @@ class NextTeamScreen extends StatelessWidget {
     );
   }
 
-  // Bilgi satırları için yardımcı metod
   Widget _buildInfoRow(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

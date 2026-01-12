@@ -8,19 +8,22 @@
 
 #include <audioplayers_windows/audioplayers_windows_plugin.h>
 #include <awesome_notifications/awesome_notifications_plugin_c_api.h>
+#include <cloud_firestore/cloud_firestore_plugin_c_api.h>
 #include <firebase_core/firebase_core_plugin_c_api.h>
 #include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
-#include <rive_common/rive_plugin.h>
+#include <rive_native/rive_native_plugin.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   AudioplayersWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("AudioplayersWindowsPlugin"));
   AwesomeNotificationsPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("AwesomeNotificationsPluginCApi"));
+  CloudFirestorePluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("CloudFirestorePluginCApi"));
   FirebaseCorePluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FirebaseCorePluginCApi"));
   FlutterSecureStorageWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
-  RivePluginRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("RivePlugin"));
+  RiveNativePluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("RiveNativePlugin"));
 }
