@@ -16,7 +16,8 @@ class _WordsScreenState extends State<WordsScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
   final List<int> _selectedWordIds = []; // Seçilen kelimelerin ID'lerini tutar
-  bool _isSelectionMode = false; // Seçim modunun aktif olup olmadığını kontrol eder
+  bool _isSelectionMode =
+      false; // Seçim modunun aktif olup olmadığını kontrol eder
   final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
 
   @override
@@ -75,7 +76,6 @@ class _WordsScreenState extends State<WordsScreen> {
     }
   }
 
-
   void _onSearchChanged() async {
     try {
       final query = _searchController.text.trim().toLowerCase();
@@ -118,9 +118,7 @@ class _WordsScreenState extends State<WordsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isSelectionMode
-              ? "${_selectedWordIds.length} Seçildi"
-              : 'Kelimeler',
+          _isSelectionMode ? "${_selectedWordIds.length} Seçildi" : 'Kelimeler',
         ),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
@@ -149,31 +147,30 @@ class _WordsScreenState extends State<WordsScreen> {
         ),
         actions: _isSelectionMode
             ? [
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            onPressed: _selectedWordIds.isEmpty
-                ? null
-                : () async {
-              await _deleteSelectedWords();
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.cancel, color: Colors.white),
-            onPressed: () {
-              setState(() {
-                _isSelectionMode = false;
-                _selectedWordIds.clear();
-              });
-            },
-          ),
-        ]
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: _selectedWordIds.isEmpty
+                      ? null
+                      : () async {
+                          await _deleteSelectedWords();
+                        },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.cancel, color: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      _isSelectionMode = false;
+                      _selectedWordIds.clear();
+                    });
+                  },
+                ),
+              ]
             : [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.white),
-            onPressed: _showAddWordDialog,
-          ),
-        ],
-
+                IconButton(
+                  icon: const Icon(Icons.add, color: Colors.white),
+                  onPressed: _showAddWordDialog,
+                ),
+              ],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -231,8 +228,8 @@ class _WordsScreenState extends State<WordsScreen> {
               itemCount: _filteredWords.length,
               itemBuilder: (context, index) {
                 final word = _filteredWords[index];
-                final isSelected = _selectedWordIds.contains(
-                    word['id']); // Seçili olup olmadığını kontrol et
+                final isSelected = _selectedWordIds
+                    .contains(word['id']); // Seçili olup olmadığını kontrol et
                 return Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -242,27 +239,27 @@ class _WordsScreenState extends State<WordsScreen> {
                   child: ListTile(
                     leading: _isSelectionMode
                         ? Checkbox(
-                      value: isSelected,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          if (value == true) {
-                            _selectedWordIds.add(word['id']);
-                          } else {
-                            _selectedWordIds.remove(word['id']);
-                          }
-                        });
-                      },
-                    )
+                            value: isSelected,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                if (value == true) {
+                                  _selectedWordIds.add(word['id']);
+                                } else {
+                                  _selectedWordIds.remove(word['id']);
+                                }
+                              });
+                            },
+                          )
                         : CircleAvatar(
-                      backgroundColor: Colors.deepPurple,
-                      child: Text(
-                        "${index + 1}",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                            backgroundColor: Colors.deepPurple,
+                            child: Text(
+                              "${index + 1}",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                     title: Text(
                       word['word'],
                       style: const TextStyle(
@@ -270,17 +267,31 @@ class _WordsScreenState extends State<WordsScreen> {
                         fontSize: 18,
                       ),
                     ),
-                    subtitle: Text(
-                      "Yasaklı Kelimeler: ${word['forbidden_words']}",
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Yasaklı Kelimeler: ${word['forbidden_words']}",
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Kategori: ${word['category'] ?? 'Genel'}",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
                     trailing: _isSelectionMode
                         ? null // Seçim modunda silme butonunu gösterme
                         : IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _deleteWord(word['id']),
-                    ),
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => _deleteWord(word['id']),
+                          ),
                     onTap: () {
                       if (_isSelectionMode) {
                         setState(() {
@@ -315,26 +326,24 @@ class _WordsScreenState extends State<WordsScreen> {
     );
   }
 
-
   Future<void> _deleteSelectedWords() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) =>
-          AlertDialog(
-            title: const Text('Toplu Silme'),
-            content: const Text(
-                'Seçilen kelimeleri silmek istediğinize emin misiniz?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Hayır'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Evet'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Toplu Silme'),
+        content:
+            const Text('Seçilen kelimeleri silmek istediğinize emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Hayır'),
           ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Evet'),
+          ),
+        ],
+      ),
     );
 
     // Eğer işlem onaylanmadıysa çık
@@ -365,105 +374,164 @@ class _WordsScreenState extends State<WordsScreen> {
     }
   }
 
-
   void _showAddWordDialog() {
     final TextEditingController wordController = TextEditingController();
     final List<TextEditingController> forbiddenControllers =
-    List.generate(5, (_) => TextEditingController());
+        List.generate(5, (_) => TextEditingController());
+    String _selectedCategory = 'Genel'; // Varsayılan kategori
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20)),
-          title: const Center(
-            child: Text(
-              'Yeni Kelime Ekle',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: wordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Kelime',
-                    border: OutlineInputBorder(),
-                    contentPadding:
-                    EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                for (int i = 0; i < 5; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: TextField(
-                      controller: forbiddenControllers[i],
-                      decoration: InputDecoration(
-                        labelText: 'Yasaklı Kelime ${i + 1}',
-                        border: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 15),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('İptal', style: TextStyle(color: Colors.black)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurple,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              title: const Center(
+                child: Text(
+                  'Yeni Kelime Ekle',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ),
-              onPressed: () {
-                final word = wordController.text;
-                final forbiddenWords = forbiddenControllers
-                    .map((c) => c.text)
-                    .where((text) => text.isNotEmpty)
-                    .toList();
-                if (word.isNotEmpty && forbiddenWords.isNotEmpty) {
-                  _addWord(word, forbiddenWords);
-                  Navigator.of(context).pop();
-                }
-              },
-              child: const Text('Ekle'),
-            ),
-          ],
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: wordController,
+                      decoration: const InputDecoration(
+                        labelText: 'Kelime',
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    // Kategori seçimi
+                    FutureBuilder<List<String>>(
+                      future: DatabaseHelper().getCategories(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        }
+                        if (snapshot.hasError) {
+                          return Text('Hata: ${snapshot.error}');
+                        }
+
+                        List<String> categories = snapshot.data ?? ['Genel'];
+                        if (!categories.contains('Genel')) {
+                          categories.insert(0, 'Genel');
+                        }
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Kategori',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            DropdownButton<String>(
+                              value: _selectedCategory,
+                              isExpanded: true,
+                              items: categories.map((cat) {
+                                return DropdownMenuItem(
+                                  value: cat,
+                                  child: Text(cat),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _selectedCategory = newValue ?? 'Genel';
+                                });
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 15),
+                    const Text(
+                      'Yasaklı Kelimeler',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    for (int i = 0; i < 5; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: TextField(
+                          controller: forbiddenControllers[i],
+                          decoration: InputDecoration(
+                            labelText: 'Yasaklı Kelime ${i + 1}',
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 15),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('İptal',
+                      style: TextStyle(color: Colors.black)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () {
+                    final word = wordController.text;
+                    final forbiddenWords = forbiddenControllers
+                        .map((c) => c.text)
+                        .where((text) => text.isNotEmpty)
+                        .toList();
+                    if (word.isNotEmpty && forbiddenWords.isNotEmpty) {
+                      _addWord(word, forbiddenWords, _selectedCategory);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: const Text('Ekle'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  void _showEditWordDialog(int id, String initialWord,
-      List<String> initialForbiddenWords) {
-    final TextEditingController wordController = TextEditingController(
-        text: initialWord);
+  void _showEditWordDialog(
+      int id, String initialWord, List<String> initialForbiddenWords) {
+    final TextEditingController wordController =
+        TextEditingController(text: initialWord);
     final List<TextEditingController> forbiddenControllers = List.generate(
       5,
-          (i) =>
-          TextEditingController(
-              text: i < initialForbiddenWords.length
-                  ? initialForbiddenWords[i]
-                  : ''),
+      (i) => TextEditingController(
+          text:
+              i < initialForbiddenWords.length ? initialForbiddenWords[i] : ''),
     );
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Center(
             child: Text(
               'Kelimeyi Düzenle',
@@ -479,8 +547,8 @@ class _WordsScreenState extends State<WordsScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Kelime',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                        vertical: 10, horizontal: 15),
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -523,8 +591,8 @@ class _WordsScreenState extends State<WordsScreen> {
                   Navigator.of(context).pop();
                 }
               },
-              child: const Text(
-                  'Güncelle', style: TextStyle(color: Colors.white)),
+              child:
+                  const Text('Güncelle', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -571,10 +639,10 @@ class _WordsScreenState extends State<WordsScreen> {
     }
   }
 
-
-  void _addWord(String word, List<String> forbiddenWords) async {
+  void _addWord(
+      String word, List<String> forbiddenWords, String category) async {
     try {
-      await DatabaseHelper().addWord(word, forbiddenWords);
+      await DatabaseHelper().addWord(word, forbiddenWords, category: category);
       if (!mounted) return;
 
       // Firebase Analytics olayı
@@ -583,6 +651,7 @@ class _WordsScreenState extends State<WordsScreen> {
         parameters: {
           'word': word,
           'forbidden_words': forbiddenWords.join(', '),
+          'category': category,
         },
       );
 
@@ -595,26 +664,23 @@ class _WordsScreenState extends State<WordsScreen> {
     }
   }
 
-
   void _deleteWord(int id) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) =>
-          AlertDialog(
-            title: const Text('Kelime Sil'),
-            content: const Text(
-                'Bu kelimeyi silmek istediğinize emin misiniz?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Hayır'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Evet'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Kelime Sil'),
+        content: const Text('Bu kelimeyi silmek istediğinize emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Hayır'),
           ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Evet'),
+          ),
+        ],
+      ),
     );
 
     if (confirm == true) {

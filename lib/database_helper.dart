@@ -46,7 +46,8 @@ class DatabaseHelper {
 
     if (!await databaseExists(path)) {
       final data = await rootBundle.load('assets/database/$dbName');
-      final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+      final bytes =
+          data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
       await File(path).writeAsBytes(bytes, flush: true);
     }
   }
@@ -111,10 +112,12 @@ class DatabaseHelper {
     ''');
 
     // Unique index: aynı kelimeyi tekrar ekleme
-    await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS ux_words_word ON words(word);');
+    await db.execute(
+        'CREATE UNIQUE INDEX IF NOT EXISTS ux_words_word ON words(word);');
 
     // Kategori filtresi hızlansın (opsiyonel ama iyi)
-    await db.execute('CREATE INDEX IF NOT EXISTS ix_words_category_active ON words(category, is_active);');
+    await db.execute(
+        'CREATE INDEX IF NOT EXISTS ix_words_category_active ON words(category, is_active);');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -125,47 +128,51 @@ class DatabaseHelper {
   // ---------- Genel CRUD ----------
   Future<int> insert(String table, Map<String, dynamic> values) async {
     final db = await database;
-    return db.insert(table, values, conflictAlgorithm: ConflictAlgorithm.replace);
+    return db.insert(table, values,
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<Map<String, dynamic>>> query(
-      String table, {
-        String? where,
-        List<Object?>? whereArgs,
-        String? orderBy,
-      }) async {
+    String table, {
+    String? where,
+    List<Object?>? whereArgs,
+    String? orderBy,
+  }) async {
     final db = await database;
-    return db.query(table, where: where, whereArgs: whereArgs, orderBy: orderBy);
+    return db.query(table,
+        where: where, whereArgs: whereArgs, orderBy: orderBy);
   }
 
   Future<int> update(
-      String table,
-      Map<String, dynamic> values, {
-        String? where,
-        List<Object?>? whereArgs,
-      }) async {
+    String table,
+    Map<String, dynamic> values, {
+    String? where,
+    List<Object?>? whereArgs,
+  }) async {
     final db = await database;
     return db.update(table, values, where: where, whereArgs: whereArgs);
   }
 
   Future<int> delete(
-      String table, {
-        String? where,
-        List<Object?>? whereArgs,
-      }) async {
+    String table, {
+    String? where,
+    List<Object?>? whereArgs,
+  }) async {
     final db = await database;
     return db.delete(table, where: where, whereArgs: whereArgs);
   }
 
   // ---------- Words ----------
-  Future<List<Map<String, dynamic>>> getWords({String? where, List<Object?>? whereArgs}) async {
+  Future<List<Map<String, dynamic>>> getWords(
+      {String? where, List<Object?>? whereArgs}) async {
     return query('words', where: where, whereArgs: whereArgs);
   }
 
   /// Seçili kategorilere göre aktif kelimeleri getirir.
   /// - categories null/empty => karışık (tüm aktif)
   /// - dolu => sadece o kategoriler
-  Future<List<Map<String, dynamic>>> getActiveWordsByCategories(List<String>? categories) async {
+  Future<List<Map<String, dynamic>>> getActiveWordsByCategories(
+      List<String>? categories) async {
     final db = await database;
 
     if (categories == null || categories.isEmpty) {
@@ -208,13 +215,14 @@ class DatabaseHelper {
   }
 
   Future<void> addWord(
-      String word,
-      List<String> forbiddenWords, {
-        String category = 'Genel',
-      }) async {
+    String word,
+    List<String> forbiddenWords, {
+    String category = 'Genel',
+  }) async {
     final db = await database;
 
-    final normalizedCategory = category.trim().isEmpty ? 'Genel' : category.trim();
+    final normalizedCategory =
+        category.trim().isEmpty ? 'Genel' : category.trim();
 
     await db.insert(
       'words',
@@ -229,14 +237,15 @@ class DatabaseHelper {
   }
 
   Future<void> updateWord(
-      int id,
-      String word,
-      List<String> forbiddenWords, {
-        String category = 'Genel',
-      }) async {
+    int id,
+    String word,
+    List<String> forbiddenWords, {
+    String category = 'Genel',
+  }) async {
     final db = await database;
 
-    final normalizedCategory = category.trim().isEmpty ? 'Genel' : category.trim();
+    final normalizedCategory =
+        category.trim().isEmpty ? 'Genel' : category.trim();
 
     await db.update(
       'words',
@@ -253,7 +262,8 @@ class DatabaseHelper {
 
   Future<void> updateWordIsActive(int id, int isActive) async {
     final db = await database;
-    await db.update('words', {'is_active': isActive}, where: 'id = ?', whereArgs: [id]);
+    await db.update('words', {'is_active': isActive},
+        where: 'id = ?', whereArgs: [id]);
   }
 
   Future<List<Map<String, dynamic>>> searchWords(String queryText) async {
@@ -266,7 +276,8 @@ class DatabaseHelper {
   }
 
   Future<void> updateWordStatus(int id, int status) async {
-    await update('words', {'is_active': status}, where: 'id = ?', whereArgs: [id]);
+    await update('words', {'is_active': status},
+        where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> deleteWord(int id) async {
@@ -291,7 +302,8 @@ class DatabaseHelper {
 
   Future<void> updateJokerStatus(int id, int status) async {
     final db = await database;
-    await db.update('jokers', {'is_active': status}, where: 'id = ?', whereArgs: [id]);
+    await db.update('jokers', {'is_active': status},
+        where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> updateJoker(int id, String message) async {
@@ -306,11 +318,13 @@ class DatabaseHelper {
 
   Future<void> deleteJoker(int id) async {
     final db = await database;
-    await db.update('jokers', {'is_active': 0}, where: 'id = ?', whereArgs: [id]);
+    await db.update('jokers', {'is_active': 0},
+        where: 'id = ?', whereArgs: [id]);
   }
 
   // ---------- Records ----------
-  Future<int> addGameRecord(String team1Name, String team2Name, int team1Score, int team2Score) async {
+  Future<int> addGameRecord(String team1Name, String team2Name, int team1Score,
+      int team2Score) async {
     return insert('game_records', {
       'team1_name': team1Name,
       'team2_name': team2Name,
@@ -325,13 +339,13 @@ class DatabaseHelper {
   }
 
   Future<void> addPlayerPerformance(
-      int gameId,
-      String teamName,
-      String playerName,
-      int correctCount,
-      int tabooCount,
-      int passCount,
-      ) async {
+    int gameId,
+    String teamName,
+    String playerName,
+    int correctCount,
+    int tabooCount,
+    int passCount,
+  ) async {
     await insert('player_performances', {
       'game_id': gameId,
       'team_name': teamName,
@@ -343,7 +357,8 @@ class DatabaseHelper {
   }
 
   Future<List<Map<String, dynamic>>> getPlayerPerformances(int gameId) async {
-    return query('player_performances', where: 'game_id = ?', whereArgs: [gameId]);
+    return query('player_performances',
+        where: 'game_id = ?', whereArgs: [gameId]);
   }
 
   // ---------- Debug / Info ----------
@@ -353,10 +368,33 @@ class DatabaseHelper {
     return Sqflite.firstIntValue(res) ?? 0;
   }
 
+  // ---------- Category Management ----------
+  /// Belirtilen kategori içindeki tüm kelimeleri getirir
+  Future<List<Map<String, dynamic>>> getWordsInCategory(
+      String categoryName) async {
+    final db = await database;
+    return db.query(
+      'words',
+      where: 'is_active = ? AND TRIM(category) = ?',
+      whereArgs: [1, categoryName.trim()],
+      orderBy: 'word ASC',
+    );
+  }
+
+  /// Kategori ismi değiştirir
+  Future<void> updateCategoryName(String oldName, String newName) async {
+    final db = await database;
+    await db.rawUpdate(
+      'UPDATE words SET category = ? WHERE TRIM(category) = ? AND is_active = ?',
+      [newName.trim(), oldName.trim(), 1],
+    );
+  }
+
   // ---------- Version ----------
   Future<int> getLocalPackVersion() async {
     final db = await database;
-    final rows = await db.rawQuery("SELECT version FROM version_info WHERE id=1 LIMIT 1");
+    final rows = await db
+        .rawQuery("SELECT version FROM version_info WHERE id=1 LIMIT 1");
     if (rows.isEmpty) return 0;
     return int.tryParse(rows.first['version']?.toString() ?? '0') ?? 0;
   }

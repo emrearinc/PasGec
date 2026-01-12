@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'next_team_screen.dart';
 import 'widgets/game_button_widget.dart';
 import 'widgets/score_card_widget.dart';
@@ -78,8 +79,14 @@ class GameScreenState extends State<GameScreen> {
 
   Future<void> fetchWordsFromDatabase() async {
     try {
-      final dbWords = await DatabaseHelper()
-          .getWords(where: 'is_active = ?', whereArgs: [1]);
+      // SharedPreferences'tan seçili kategorileri al
+      final prefs = await SharedPreferences.getInstance();
+      final selectedCategories =
+          prefs.getStringList('selectedCategories') ?? [];
+
+      // null veya boş => tüm kategoriler
+      final dbWords = await DatabaseHelper().getActiveWordsByCategories(
+          selectedCategories.isEmpty ? null : selectedCategories);
 
       if (dbWords.isEmpty && mounted) {
         await GameDialogs.showNoWordsDialog(context);

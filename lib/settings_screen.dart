@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'database_helper.dart';
+import 'category_management_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -54,7 +55,8 @@ class SettingsScreenState extends State<SettingsScreen> {
       _passLimit = prefs.getInt('passLimit') ?? _passLimit;
       _tabooPenalty = prefs.getInt('tabooPenalty') ?? _tabooPenalty;
       _showJokers = prefs.getBool('showJokers') ?? _showJokers;
-      _jokerProbability = prefs.getDouble('jokerProbability') ?? _jokerProbability;
+      _jokerProbability =
+          prefs.getDouble('jokerProbability') ?? _jokerProbability;
 
       _allCategories = allCats;
       _categoryCounts = counts;
@@ -80,7 +82,8 @@ class SettingsScreenState extends State<SettingsScreen> {
       finalSelection = _selectedCategories.toList();
       if (finalSelection.isEmpty) {
         finalSelection = [];
-      } else if (_allCategories.isNotEmpty && finalSelection.length == _allCategories.length) {
+      } else if (_allCategories.isNotEmpty &&
+          finalSelection.length == _allCategories.length) {
         finalSelection = [];
       }
     }
@@ -138,138 +141,141 @@ class SettingsScreenState extends State<SettingsScreen> {
         ),
         body: _isInitialized
             ? SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: ElevatedButton(
-                    onPressed: _saveSettingsAndExit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.lime,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.save, size: 20),
-                        SizedBox(width: 8),
-                        Text('Ayarları Kaydet ve Çık'),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-                _buildSectionTitle('Kategori Seçimi'),
-                _buildCategoryCard(),
-
-                const SizedBox(height: 20),
-                _buildSectionTitle('Oyun Skoru'),
-                _buildCustomCard(
-                  child: Slider(
-                    value: _gameScore.toDouble(),
-                    min: 5,
-                    max: 50,
-                    divisions: 9,
-                    label: _gameScore.toString(),
-                    activeColor: Colors.deepPurple,
-                    onChanged: (double value) => setState(() => _gameScore = value.toInt()),
-                  ),
-                  label: 'Seçilen Oyun Skoru: $_gameScore',
-                ),
-
-                const SizedBox(height: 10),
-                _buildSectionTitle('Oyun Zamanı (saniye)'),
-                _buildCustomCard(
-                  child: Slider(
-                    value: _gameTime.toDouble(),
-                    min: 10,
-                    max: 180,
-                    divisions: 17,
-                    label: _gameTime.toString(),
-                    activeColor: Colors.deepPurple,
-                    onChanged: (double value) => setState(() => _gameTime = value.toInt()),
-                  ),
-                  label: 'Seçilen Oyun Zamanı: $_gameTime saniye',
-                ),
-
-                const SizedBox(height: 10),
-                _buildSectionTitle('Pas Hakkı'),
-                _buildCustomCard(
-                  child: Slider(
-                    value: _passLimit.toDouble(),
-                    min: 0,
-                    max: 5,
-                    divisions: 5,
-                    label: _passLimit.toString(),
-                    activeColor: Colors.deepPurple,
-                    onChanged: (double value) => setState(() => _passLimit = value.toInt()),
-                  ),
-                  label: 'Seçilen Pas Hakkı: $_passLimit',
-                ),
-
-                const SizedBox(height: 10),
-                _buildSectionTitle('Tabu Cezası Puanı'),
-                _buildCustomCard(
-                  child: Slider(
-                    value: _tabooPenalty.toDouble(),
-                    min: 0,
-                    max: 5,
-                    divisions: 5,
-                    label: _tabooPenalty.toString(),
-                    activeColor: Colors.deepPurple,
-                    onChanged: (double value) => setState(() => _tabooPenalty = value.toInt()),
-                  ),
-                  label: 'Seçilen Tabu Cezası: $_tabooPenalty puan',
-                ),
-
-                const SizedBox(height: 10),
-                _buildSectionTitle('Joker Ayarları'),
-                _buildCustomCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Jokerler Gösterilsin', style: TextStyle(fontSize: 16)),
-                          Switch(
-                            value: _showJokers,
-                            onChanged: (bool value) => setState(() => _showJokers = value),
-                            activeColor: Colors.deepPurple,
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: _saveSettingsAndExit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.lime,
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 40, vertical: 14),
+                            textStyle: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w600),
                           ),
-                        ],
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.save, size: 20),
+                              SizedBox(width: 8),
+                              Text('Ayarları Kaydet ve Çık'),
+                            ],
+                          ),
+                        ),
                       ),
-                      if (_showJokers) ...[
-                        const SizedBox(height: 10),
-                        Slider(
-                          value: _jokerProbability,
-                          min: 0,
-                          max: 1,
-                          divisions: 10,
-                          label: '${(_jokerProbability * 100).toInt()}%',
+                      const SizedBox(height: 20),
+                      _buildSectionTitle('Kategori Seçimi'),
+                      _buildCategoryCard(),
+                      const SizedBox(height: 20),
+                      _buildSectionTitle('Oyun Skoru'),
+                      _buildCustomCard(
+                        child: Slider(
+                          value: _gameScore.toDouble(),
+                          min: 5,
+                          max: 50,
+                          divisions: 9,
+                          label: _gameScore.toString(),
                           activeColor: Colors.deepPurple,
-                          onChanged: (double value) => setState(() => _jokerProbability = value),
+                          onChanged: (double value) =>
+                              setState(() => _gameScore = value.toInt()),
                         ),
-                        Text(
-                          'Gösterim İhtimali: ${(_jokerProbability * 100).toInt()}%',
-                          style: const TextStyle(fontSize: 16),
+                        label: 'Seçilen Oyun Skoru: $_gameScore',
+                      ),
+                      const SizedBox(height: 10),
+                      _buildSectionTitle('Oyun Zamanı (saniye)'),
+                      _buildCustomCard(
+                        child: Slider(
+                          value: _gameTime.toDouble(),
+                          min: 10,
+                          max: 180,
+                          divisions: 17,
+                          label: _gameTime.toString(),
+                          activeColor: Colors.deepPurple,
+                          onChanged: (double value) =>
+                              setState(() => _gameTime = value.toInt()),
                         ),
-                      ],
+                        label: 'Seçilen Oyun Zamanı: $_gameTime saniye',
+                      ),
+                      const SizedBox(height: 10),
+                      _buildSectionTitle('Pas Hakkı'),
+                      _buildCustomCard(
+                        child: Slider(
+                          value: _passLimit.toDouble(),
+                          min: 0,
+                          max: 5,
+                          divisions: 5,
+                          label: _passLimit.toString(),
+                          activeColor: Colors.deepPurple,
+                          onChanged: (double value) =>
+                              setState(() => _passLimit = value.toInt()),
+                        ),
+                        label: 'Seçilen Pas Hakkı: $_passLimit',
+                      ),
+                      const SizedBox(height: 10),
+                      _buildSectionTitle('Tabu Cezası Puanı'),
+                      _buildCustomCard(
+                        child: Slider(
+                          value: _tabooPenalty.toDouble(),
+                          min: 0,
+                          max: 5,
+                          divisions: 5,
+                          label: _tabooPenalty.toString(),
+                          activeColor: Colors.deepPurple,
+                          onChanged: (double value) =>
+                              setState(() => _tabooPenalty = value.toInt()),
+                        ),
+                        label: 'Seçilen Tabu Cezası: $_tabooPenalty puan',
+                      ),
+                      const SizedBox(height: 10),
+                      _buildSectionTitle('Joker Ayarları'),
+                      _buildCustomCard(
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Jokerler Gösterilsin',
+                                    style: TextStyle(fontSize: 16)),
+                                Switch(
+                                  value: _showJokers,
+                                  onChanged: (bool value) =>
+                                      setState(() => _showJokers = value),
+                                  activeColor: Colors.deepPurple,
+                                ),
+                              ],
+                            ),
+                            if (_showJokers) ...[
+                              const SizedBox(height: 10),
+                              Slider(
+                                value: _jokerProbability,
+                                min: 0,
+                                max: 1,
+                                divisions: 10,
+                                label: '${(_jokerProbability * 100).toInt()}%',
+                                activeColor: Colors.deepPurple,
+                                onChanged: (double value) =>
+                                    setState(() => _jokerProbability = value),
+                              ),
+                              Text(
+                                'Gösterim İhtimali: ${(_jokerProbability * 100).toInt()}%',
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ],
+                        ),
+                        label: 'Joker Gösterim Ayarları',
+                      ),
                     ],
                   ),
-                  label: 'Joker Gösterim Ayarları',
                 ),
-              ],
-            ),
-          ),
-        )
+              )
             : const Center(child: CircularProgressIndicator()),
       ),
     );
@@ -314,17 +320,40 @@ class SettingsScreenState extends State<SettingsScreen> {
                   onSelected: _mixMode
                       ? null
                       : (val) {
-                    setState(() {
-                      if (val) {
-                        _selectedCategories.add(cat);
-                      } else {
-                        _selectedCategories.remove(cat);
-                      }
-                    });
-                  },
+                          setState(() {
+                            if (val) {
+                              _selectedCategories.add(cat);
+                            } else {
+                              _selectedCategories.remove(cat);
+                            }
+                          });
+                        },
                 );
               }).toList(),
             ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.manage_accounts),
+              label: const Text('Kategori Yönetimi'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurple,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CategoryManagementScreen(),
+                  ),
+                ).then((_) {
+                  // Kategori yönetim ekranından dönerken verileri yenile
+                  _loadSettings();
+                });
+              },
+            ),
+          ),
           const SizedBox(height: 8),
           if (!_mixMode)
             Text(
@@ -341,7 +370,8 @@ class SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
+        style: const TextStyle(
+            fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
       ),
     );
   }
@@ -370,7 +400,9 @@ class SettingsScreenState extends State<SettingsScreen> {
               AnimatedOpacity(
                 duration: const Duration(milliseconds: 300),
                 opacity: 0.85,
-                child: Text(label, style: const TextStyle(fontSize: 16, color: Colors.black87)),
+                child: Text(label,
+                    style:
+                        const TextStyle(fontSize: 16, color: Colors.black87)),
               ),
             ],
           ),
