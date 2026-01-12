@@ -13,12 +13,13 @@ class WordsScreen extends StatefulWidget {
 class _WordsScreenState extends State<WordsScreen> {
   List<Map<String, dynamic>> _words = [];
   List<Map<String, dynamic>> _filteredWords = [];
-  List<Map<String, dynamic>> _displayedWords = []; // Lazy loading için
+  final List<Map<String, dynamic>> _displayedWords = []; // Lazy loading için
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
   final List<int> _selectedWordIds = []; // Seçilen kelimelerin ID'lerini tutar
   bool _isSelectionMode = false;
   final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
+  String _selectedCategory = 'Genel'; // Varsayılan kategori
 
   // ✅ Lazy Loading Parameters
   static const int _pageSize = 50; // Her sayfada 50 kelime
@@ -419,16 +420,19 @@ class _WordsScreenState extends State<WordsScreen> {
       // Kelimeleri yeniden yükle
       await _fetchWords();
 
+      if (!mounted) return;
       setState(() {
         _isSelectionMode = false;
         _selectedWordIds.clear(); // Seçim listesini temizle
       });
 
       // Kullanıcıya başarı mesajı göster
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Seçilen kelimeler başarıyla silindi!')),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Bir hata oluştu, tekrar deneyin.')),
       );
@@ -439,7 +443,6 @@ class _WordsScreenState extends State<WordsScreen> {
     final TextEditingController wordController = TextEditingController();
     final List<TextEditingController> forbiddenControllers =
         List.generate(5, (_) => TextEditingController());
-    String _selectedCategory = 'Genel'; // Varsayılan kategori
 
     showDialog(
       context: context,

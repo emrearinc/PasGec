@@ -138,8 +138,8 @@ class _WinnerScreenState extends State<WinnerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false, // Geri tuşunu devre dışı bırak
+    return PopScope(
+      canPop: false,
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: AppBar(
@@ -214,7 +214,7 @@ class _WinnerScreenState extends State<WinnerScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
-      color: Colors.white.withOpacity(0.9),
+      color: Colors.white.withValues(alpha: 0.9),
       child: Padding(
         padding: const EdgeInsets.all(15.0),
         child: Column(
@@ -236,7 +236,7 @@ class _WinnerScreenState extends State<WinnerScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.deepPurple.withOpacity(0.1),
+                    color: Colors.deepPurple.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Column(
@@ -302,7 +302,7 @@ class _WinnerScreenState extends State<WinnerScreen> {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: color.withOpacity(0.9),
+        backgroundColor: color.withValues(alpha: 0.9),
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
         shape: RoundedRectangleBorder(

@@ -125,7 +125,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                         margin: const EdgeInsets.all(12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.white30),
                         ),
@@ -149,7 +149,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                             Column(
                               children: [
                                 Text(
-                                  '${_totalWords}',
+                                  _totalWords.toString(),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 24,
@@ -163,7 +163,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                             Column(
                               children: [
                                 Text(
-                                  '${_averageWords.toStringAsFixed(1)}',
+                                  _averageWords.toStringAsFixed(1),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 24,

@@ -103,7 +103,7 @@ class GameDialogs {
     return showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.9),
+      barrierColor: Colors.black.withValues(alpha: 0.9),
       builder: (context) {
         return Dialog(
           shape: RoundedRectangleBorder(
@@ -222,7 +222,7 @@ class GameDialogs {
     return showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.3),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (context) {
         return Dialog(
           shape: RoundedRectangleBorder(
@@ -327,7 +327,7 @@ class GameDialogs {
     final bool? shouldExit = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.3),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (BuildContext dialogContext) {
         return Dialog(
           shape: RoundedRectangleBorder(

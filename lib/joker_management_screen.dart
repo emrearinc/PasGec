@@ -240,6 +240,7 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
 
       await _fetchJokers(); // Jokerleri yeniden yükle
 
+      if (!mounted) return;
       setState(() {
         _isSelectionMode = false;
         _selectedJokerIds.clear(); // Seçim listesini temizle
@@ -257,6 +258,7 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
         },
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Hata oluştu: $e')),
       );
@@ -381,8 +383,8 @@ class JokerManagementScreenState extends State<JokerManagementScreen> {
           elevation: 3,
           color: isSelected
               ? Colors.deepPurple
-                  .withOpacity(0.2) // Seçili olan jokerin arka planı
-              : Colors.white.withOpacity(0.9),
+                  .withValues(alpha: 0.2) // Seçili olan jokerin arka planı
+              : Colors.white.withValues(alpha: 0.9),
           child: ListTile(
             leading: _isSelectionMode
                 ? Checkbox(

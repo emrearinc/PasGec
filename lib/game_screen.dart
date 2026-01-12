@@ -117,6 +117,7 @@ class GameScreenState extends State<GameScreen> {
   Future<void> _syncOfflineData() async {
     try {
       await OfflineSyncService().syncWithConflictResolution();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('🔄 Veriler senkronize edildi'),
@@ -124,6 +125,7 @@ class GameScreenState extends State<GameScreen> {
         ),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('❌ Senkronizasyon hatası: $e'),
@@ -482,9 +484,15 @@ class GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        return await GameDialogs.showExitConfirmationDialog(context);
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final bool shouldPop =
+            await GameDialogs.showExitConfirmationDialog(context);
+        if (shouldPop && mounted) {
+          Navigator.of(context).pop();
+        }
       },
       child: Scaffold(
         appBar: _buildAppBar(),

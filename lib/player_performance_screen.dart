@@ -15,7 +15,8 @@ class PlayerPerformanceScreen extends StatelessWidget {
 
   Future<List<Map<String, dynamic>>> fetchPlayerPerformances() async {
     final db = DatabaseHelper();
-    return await db.getPlayerPerformances(gameId); // Veritabanından performansları al
+    return await db
+        .getPlayerPerformances(gameId); // Veritabanından performansları al
   }
 
   @override
@@ -49,14 +50,17 @@ class PlayerPerformanceScreen extends StatelessWidget {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              return const Center(child: Text('Veriler alınırken hata oluştu.'));
+              return const Center(
+                  child: Text('Veriler alınırken hata oluştu.'));
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('Oyuncu performansı bulunamadı.'));
+              return const Center(
+                  child: Text('Oyuncu performansı bulunamadı.'));
             } else {
               final performances = snapshot.data!;
               return ListView.builder(
                 padding: const EdgeInsets.only(
-                  top: kToolbarHeight + 16.0, // AppBar'ı dikkate alarak üst padding ekle
+                  top: kToolbarHeight +
+                      16.0, // AppBar'ı dikkate alarak üst padding ekle
                   left: 16.0,
                   right: 16.0,
                 ),
@@ -77,8 +81,8 @@ class PlayerPerformanceScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            teamColor.withOpacity(0.8),
-                            teamColor.withOpacity(0.5),
+                            teamColor.withValues(alpha: 0.8),
+                            teamColor.withValues(alpha: 0.5),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -119,7 +123,7 @@ class PlayerPerformanceScreen extends StatelessWidget {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.8),
+                                    color: Colors.white.withValues(alpha: 0.8),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
@@ -190,7 +194,7 @@ class PlayerPerformanceScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
           ),
         ),
       ],

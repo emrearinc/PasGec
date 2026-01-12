@@ -321,7 +321,7 @@ class HomeScreenState extends State<HomeScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        color: color.withOpacity(0.9),
+        color: color.withValues(alpha: 0.9),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,

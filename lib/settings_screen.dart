@@ -380,7 +380,7 @@ class SettingsScreenState extends State<SettingsScreen> {
     return Card(
       elevation: 8,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      shadowColor: Colors.deepPurple.withOpacity(0.4),
+      shadowColor: Colors.deepPurple.withValues(alpha: 0.4),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(15),
