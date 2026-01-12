@@ -13,24 +13,55 @@ class WordsScreen extends StatefulWidget {
 class _WordsScreenState extends State<WordsScreen> {
   List<Map<String, dynamic>> _words = [];
   List<Map<String, dynamic>> _filteredWords = [];
+  List<Map<String, dynamic>> _displayedWords = []; // Lazy loading için
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
   final List<int> _selectedWordIds = []; // Seçilen kelimelerin ID'lerini tutar
-  bool _isSelectionMode =
-      false; // Seçim modunun aktif olup olmadığını kontrol eder
+  bool _isSelectionMode = false;
   final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
+
+  // ✅ Lazy Loading Parameters
+  static const int _pageSize = 50; // Her sayfada 50 kelime
+  int _currentPage = 0;
+  bool _hasMoreData = true;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _fetchWords();
     _searchController.addListener(_onSearchChanged);
+    _scrollController.addListener(_onScroll); // Lazy loading listener
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose(); // ✅ Memory leak fix
     super.dispose();
+  }
+
+  // ✅ Lazy loading: Scroll sonuna gelince daha fazla yükle
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 500) {
+      if (_hasMoreData && !_isLoading) {
+        _loadMoreWords();
+      }
+    }
+  }
+
+  void _loadMoreWords() {
+    setState(() {
+      final startIndex = _currentPage * _pageSize;
+      final endIndex = (startIndex + _pageSize).clamp(0, _filteredWords.length);
+
+      if (startIndex < _filteredWords.length) {
+        _displayedWords.addAll(_filteredWords.sublist(startIndex, endIndex));
+        _currentPage++;
+        _hasMoreData = endIndex < _filteredWords.length;
+      }
+    });
   }
 
   Future<void> _fetchWords() async {
@@ -60,6 +91,9 @@ class _WordsScreenState extends State<WordsScreen> {
         _words = words;
         _filteredWords = words;
         _isLoading = false;
+        _currentPage = 0; // ✅ Reset page
+        _displayedWords.clear();
+        _loadMoreWords(); // ✅ İlk sayfayı yükle
       });
     } catch (e, stackTrace) {
       log("Kelimeler alınırken hata oluştu: $e", stackTrace: stackTrace);
@@ -82,6 +116,10 @@ class _WordsScreenState extends State<WordsScreen> {
       if (query.isEmpty) {
         setState(() {
           _filteredWords = _words;
+          _currentPage = 0; // ✅ Reset page
+          _displayedWords.clear();
+          _loadMoreWords();
+          _hasMoreData = true;
         });
       } else {
         final results = await DatabaseHelper().searchWords(query);
@@ -90,6 +128,10 @@ class _WordsScreenState extends State<WordsScreen> {
 
         setState(() {
           _filteredWords = results;
+          _currentPage = 0; // ✅ Reset page
+          _displayedWords.clear();
+          _loadMoreWords();
+          _hasMoreData = _filteredWords.length > _pageSize;
         });
       }
     } catch (e) {
@@ -215,7 +257,7 @@ class _WordsScreenState extends State<WordsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Toplam Kelime Sayısı: ${_filteredWords.length}",
+            "Toplam Kelime Sayısı: ${_filteredWords.length} (Gösterilen: ${_displayedWords.length})",
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -225,9 +267,28 @@ class _WordsScreenState extends State<WordsScreen> {
           const SizedBox(height: 10),
           Expanded(
             child: ListView.builder(
-              itemCount: _filteredWords.length,
+              controller: _scrollController,
+              itemCount: _displayedWords.length + (_hasMoreData ? 1 : 0),
               itemBuilder: (context, index) {
-                final word = _filteredWords[index];
+                // Show loading indicator at the end
+                if (index == _displayedWords.length && _hasMoreData) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Center(
+                      child: SizedBox(
+                        height: 40,
+                        width: 40,
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.deepPurple.shade300,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                final word = _displayedWords[index];
                 final isSelected = _selectedWordIds
                     .contains(word['id']); // Seçili olup olmadığını kontrol et
                 return Card(

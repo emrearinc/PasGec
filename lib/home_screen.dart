@@ -5,7 +5,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:awesome_notifications/awesome_notifications.dart';
 
 import 'team_selection_screen.dart';
 import 'settings_screen.dart';
@@ -96,7 +95,8 @@ class HomeScreenState extends State<HomeScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Tamam. pack:$_packVersion • words:$_wordCount')),
+        SnackBar(
+            content: Text('Tamam. pack:$_packVersion • words:$_wordCount')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -174,7 +174,6 @@ class HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
             Align(
               alignment: Alignment.bottomRight,
               child: Padding(
@@ -276,25 +275,32 @@ class HomeScreenState extends State<HomeScreen> {
         break;
 
       case 1:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()))
+        Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()))
             .then((_) => _loadSettings());
         break;
 
       case 2:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const WordsScreen()))
+        Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const WordsScreen()))
             .then((_) => _loadDbInfo());
         break;
 
       case 3:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const HowToPlayScreen()));
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => const HowToPlayScreen()));
         break;
 
       case 4:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const ScoresScreen()));
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => const ScoresScreen()));
         break;
 
       case 5:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const JokerManagementScreen()));
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const JokerManagementScreen()));
         break;
     }
   }
@@ -317,12 +323,17 @@ class HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: MediaQuery.of(context).size.width * 0.08, color: Colors.white),
+              Icon(icon,
+                  size: MediaQuery.of(context).size.width * 0.08,
+                  color: Colors.white),
               const SizedBox(height: 10),
               Text(
                 label,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
               ),
             ],
           ),

@@ -13,6 +13,8 @@ import 'widgets/game_word_card.dart';
 import 'database_helper.dart';
 import 'package:vibration/vibration.dart';
 import 'package:tabu_oyunu/winner_screen.dart';
+import 'services/connectivity_service.dart';
+import 'services/offline_sync_service.dart';
 
 class GameScreen extends StatefulWidget {
   final List<String> team1Players;
@@ -48,10 +50,15 @@ class GameScreenState extends State<GameScreen> {
   late GameStateManager gameState;
   late GameAudioManager audioManager;
   List<Word> words = [];
+  late StreamSubscription<bool> _connectivitySubscription;
+  bool _isOnline = true;
 
   @override
   void initState() {
     super.initState();
+
+    // Connectivity dinleyicisini başlat
+    _initConnectivityListener();
 
     // GameStateManager'ı oluştur
     gameState = GameStateManager(
@@ -75,6 +82,55 @@ class GameScreenState extends State<GameScreen> {
 
     // Timer'ı başlat
     _startGame();
+  }
+
+  void _initConnectivityListener() {
+    _connectivitySubscription =
+        ConnectivityService().isOnlineStream.listen((isOnline) {
+      setState(() => _isOnline = isOnline);
+
+      if (!_isOnline) {
+        // Offline moda geç
+        OfflineSyncService().setOfflineMode(true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('📡 Bağlantı kesildi - Offline modda çalışıyor'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else {
+        // Online'a dön ve senkronize et
+        OfflineSyncService().setOfflineMode(false);
+        _syncOfflineData();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Bağlantı kuruıldı - Senkronize ediliyor'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    });
+  }
+
+  Future<void> _syncOfflineData() async {
+    try {
+      await OfflineSyncService().syncWithConflictResolution();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🔄 Veriler senkronize edildi'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Senkronizasyon hatası: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> fetchWordsFromDatabase() async {
@@ -418,6 +474,7 @@ class GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
+    _connectivitySubscription.cancel();
     gameState.dispose();
     audioManager.dispose();
     super.dispose();
@@ -432,7 +489,40 @@ class GameScreenState extends State<GameScreen> {
       child: Scaffold(
         appBar: _buildAppBar(),
         extendBodyBehindAppBar: true,
-        body: _buildBody(),
+        body: Stack(
+          children: [
+            _buildBody(),
+            // Offline göstergesi
+            if (!_isOnline)
+              Positioned(
+                top: 80,
+                right: 16,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.cloud_off, color: Colors.white, size: 16),
+                      SizedBox(width: 6),
+                      Text(
+                        'Offline',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

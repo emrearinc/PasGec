@@ -15,6 +15,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
   List<Map<String, dynamic>> _categoryData = []; // {kategori, sayı}
   bool _isLoading = true;
   final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -75,6 +76,13 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle, color: Colors.white),
+            tooltip: 'Yeni Kategori Ekle',
+            onPressed: _showAddCategoryDialog,
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -93,75 +101,166 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                       style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _categoryData.length,
-                    itemBuilder: (context, index) {
-                      final categoryName = _categoryData[index]['category'];
-                      final wordCount = _categoryData[index]['count'];
-
-                      return Card(
-                        shape: RoundedRectangleBorder(
+                : Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Kategori ara...',
+                            prefixIcon: const Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          onChanged: (value) {
+                            setState(() => _searchQuery = value.toLowerCase());
+                          },
+                        ),
+                      ),
+                      // AppBar altında summary widget ekle:
+                      Container(
+                        margin: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white30),
                         ),
-                        elevation: 4,
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          leading: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.deepPurple,
-                              borderRadius: BorderRadius.circular(8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Column(
+                              children: [
+                                Text(
+                                  '${_categoryData.length}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const Text('Kategori',
+                                    style: TextStyle(color: Colors.white70)),
+                              ],
                             ),
-                            padding: const EdgeInsets.all(8),
-                            child: Text(
-                              '${index + 1}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                            Column(
+                              children: [
+                                Text(
+                                  '${_totalWords}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const Text('Toplam Kelime',
+                                    style: TextStyle(color: Colors.white70)),
+                              ],
                             ),
-                          ),
-                          title: Text(
-                            categoryName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                            Column(
+                              children: [
+                                Text(
+                                  '${_averageWords.toStringAsFixed(1)}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const Text('Ort. Kelime',
+                                    style: TextStyle(color: Colors.white70)),
+                              ],
                             ),
-                          ),
-                          subtitle: Text(
-                            '$wordCount kelime',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          trailing: Wrap(
-                            spacing: 8,
-                            children: [
-                              IconButton(
-                                icon:
-                                    const Icon(Icons.list, color: Colors.blue),
-                                tooltip: 'Kelimeleri Göster',
-                                onPressed: () =>
-                                    _showWordsInCategory(categoryName),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.edit,
-                                    color: Colors.orange),
-                                tooltip: 'Kategori İsmi Değiştir',
-                                onPressed: () =>
-                                    _showRenameCategoryDialog(categoryName),
-                              ),
-                            ],
-                          ),
+                          ],
                         ),
-                      );
-                    },
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(12),
+                          itemCount: _filteredCategories.length,
+                          itemBuilder: (context, index) {
+                            final categoryName =
+                                _filteredCategories[index]['category'];
+                            final wordCount =
+                                _filteredCategories[index]['count'];
+
+                            return Card(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 4,
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                leading: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.deepPurple,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: const EdgeInsets.all(8),
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                                title: Text(
+                                  categoryName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  '$wordCount kelime',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                trailing: Wrap(
+                                  spacing: 8,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.list,
+                                          color: Colors.blue),
+                                      tooltip: 'Kelimeleri Göster',
+                                      onPressed: () =>
+                                          _showWordsInCategory(categoryName),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit,
+                                          color: Colors.orange),
+                                      tooltip: 'Kategori İsmi Değiştir',
+                                      onPressed: () =>
+                                          _showRenameCategoryDialog(
+                                              categoryName),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete,
+                                          color: Colors.red),
+                                      tooltip: 'Kategoriyi Sil',
+                                      onPressed: () =>
+                                          _showDeleteCategoryDialog(
+                                              categoryName),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
       ),
     );
@@ -316,4 +415,118 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
       }
     }
   }
+
+  void _showDeleteCategoryDialog(String categoryName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Kategoriyi Sil?'),
+        content: Text(
+          'Bu kategoriyi silmek istediğiniz emin misiniz?\n'
+          'Bu kategorideki kelimelerin kategorisi "Diğer" olacak.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              _deleteCategory(categoryName);
+              Navigator.pop(context);
+            },
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteCategory(String categoryName) async {
+    try {
+      await DatabaseHelper().deleteCategory(categoryName);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$categoryName silindi')),
+        );
+      }
+      _loadCategories();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _showAddCategoryDialog() {
+    final TextEditingController controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Yeni Kategori Ekle'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Kategori İsmi',
+            border: OutlineInputBorder(),
+            hintText: 'örn: Hayvanlar, Spor, vb.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+            ),
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                _addNewCategory(name);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Ekle'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addNewCategory(String categoryName) async {
+    try {
+      await DatabaseHelper().addCategory(categoryName);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$categoryName eklendi')),
+        );
+      }
+      _loadCategories();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  List<Map<String, dynamic>> get _filteredCategories {
+    if (_searchQuery.isEmpty) return _categoryData;
+    return _categoryData
+        .where((cat) => cat['category'].toLowerCase().contains(_searchQuery))
+        .toList();
+  }
+
+  int get _totalWords =>
+      _categoryData.fold(0, (sum, cat) => sum + (cat['count'] as int));
+
+  double get _averageWords =>
+      _categoryData.isEmpty ? 0 : _totalWords / _categoryData.length;
 }

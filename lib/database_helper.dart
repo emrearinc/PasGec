@@ -65,6 +65,23 @@ class DatabaseHelper {
       )
     ''');
 
+    // ✅ Performance indexleri
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_words_active ON words(is_active)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_words_category ON words(category)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_words_category_active ON words(category, is_active)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_words_word ON words(word)
+    ''');
+
     // jokers
     await db.execute('''
       CREATE TABLE IF NOT EXISTS jokers (
@@ -85,6 +102,11 @@ class DatabaseHelper {
         team2_score INTEGER NOT NULL,
         date TEXT NOT NULL
       )
+    ''');
+
+    // ✅ Game records indexi
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_game_records_date ON game_records(date)
     ''');
 
     // player_performances
@@ -390,6 +412,46 @@ class DatabaseHelper {
     );
   }
 
+  /// Kategori sil (kelimeleri "Diğer" kategorisine taşı)
+  Future<void> deleteCategory(String categoryName) async {
+    final db = await database;
+    await db.rawUpdate(
+      'UPDATE words SET category = "Diğer" WHERE TRIM(category) = ? AND is_active = ?',
+      [categoryName.trim(), 1],
+    );
+  }
+
+  /// Kategori ekle (boş kategori)
+  Future<void> addCategory(String categoryName) async {
+    final db = await database;
+    await db.insert(
+      'words',
+      {
+        'word': '_category_${categoryName}_placeholder',
+        'forbidden_words': '',
+        'category': categoryName.trim(),
+        'is_active': 0,
+        'created_by': 'system',
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+  }
+
+  /// Oyun sonucunu kaydet (offline/online)
+  Future<void> insertGameResult(Map<String, dynamic> gameData) async {
+    final db = await database;
+    await db.insert(
+      'game_records',
+      {
+        'team1_name': gameData['team1_name'] ?? 'Takım 1',
+        'team2_name': gameData['team2_name'] ?? 'Takım 2',
+        'team1_score': gameData['team1_score'] ?? 0,
+        'team2_score': gameData['team2_score'] ?? 0,
+        'date': gameData['date'] ?? DateTime.now().toIso8601String(),
+      },
+    );
+  }
+
   // ---------- Version ----------
   Future<int> getLocalPackVersion() async {
     final db = await database;
@@ -405,5 +467,10 @@ class DatabaseHelper {
       "INSERT OR REPLACE INTO version_info(id, version, description) VALUES(1, ?, ?)",
       [version.toString(), "remote words pack"],
     );
+  }
+
+  void dispose() {
+    _database?.close();
+    _database = null;
   }
 }

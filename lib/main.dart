@@ -9,15 +9,22 @@ import 'package:firebase_core/firebase_core.dart';
 import 'home_screen.dart';
 import 'firebase_options.dart';
 import 'words_pack_updater.dart';
+import 'services/connectivity_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ ImageCache optimize
+  imageCache.maximumSizeBytes = 100 * 1024 * 1024; // 100 MB
+  imageCache.maximumSize = 1000; // 1000 resim
 
   // Firebase başlat (FlutterFire CLI config ile)
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // ✅ Connectivity Service'i başlat
+  await ConnectivityService().init();
 
   // Kelime paketini senkronla (uygulamayı düşürmesin)
   try {
