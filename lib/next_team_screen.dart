@@ -30,8 +30,8 @@ class NextTeamScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false,
+    return PopScope(
+      canPop: false,
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: AppBar(
@@ -77,15 +77,21 @@ class NextTeamScreen extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: 10,
+                          textStyle: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
+                        child: const Text('Devam Et'),
                       ),
-                      child: const Text('Devam Et'),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -103,7 +109,7 @@ class NextTeamScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(25),
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
         ),
         child: Column(
           children: [
@@ -112,7 +118,7 @@ class NextTeamScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.deepPurple.withOpacity(0.8),
+                color: Colors.deepPurple.withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 12),
@@ -149,9 +155,9 @@ class NextTeamScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withOpacity(0.35), width: 1.2),
+        border: Border.all(color: color.withValues(alpha: 0.35), width: 1.2),
       ),
       child: Column(
         children: [
@@ -163,7 +169,7 @@ class NextTeamScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: color.withOpacity(0.9),
+              color: color.withValues(alpha: 0.9),
             ),
           ),
           const SizedBox(height: 6),
@@ -192,7 +198,7 @@ class NextTeamScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(25),
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -239,7 +245,7 @@ class NextTeamScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: color.withOpacity(0.7),
+            color: color.withValues(alpha: 0.7),
           ),
         ),
         Text(
@@ -270,7 +276,7 @@ class NextTeamScreen extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
           decoration: BoxDecoration(
-            color: Colors.teal.withOpacity(0.1),
+            color: Colors.teal.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(

@@ -80,7 +80,8 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
         ),
       );
     } else {
-      showAlertDialog('Lütfen takım adlarını ve her iki takım için en az bir oyuncu girin!');
+      showAlertDialog(
+          'Lütfen takım adlarını ve her iki takım için en az bir oyuncu girin!');
     }
   }
 
@@ -152,42 +153,44 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
               end: Alignment.bottomCenter,
             ),
           ),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.all(padding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 20),
-                _buildTeamCard(
-                    '1. Takım Bilgileri', _team1Controller, _team1PlayersControllers, screenWidth),
-                const SizedBox(height: 20),
-                _buildTeamCard(
-                    '2. Takım Bilgileri', _team2Controller, _team2PlayersControllers, screenWidth),
-                const SizedBox(height: 30),
-                Center(
-                  child: ElevatedButton.icon(
-                    onPressed: startGame,
-                    icon: const Icon(Icons.play_arrow, size: 30),
-                    label: const Text(
-                      'Oyunu Başlat',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: screenWidth > 600 ? 60 : 40,
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.all(padding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 20),
+                  _buildTeamCard('1. Takım Bilgileri', _team1Controller,
+                      _team1PlayersControllers, screenWidth),
+                  const SizedBox(height: 20),
+                  _buildTeamCard('2. Takım Bilgileri', _team2Controller,
+                      _team2PlayersControllers, screenWidth),
+                  const SizedBox(height: 30),
+                  Center(
+                    child: ElevatedButton.icon(
+                      onPressed: startGame,
+                      icon: const Icon(Icons.play_arrow, size: 30),
+                      label: const Text(
+                        'Oyunu Başlat',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                      backgroundColor: Colors.deepPurpleAccent,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: screenWidth > 600 ? 60 : 40,
+                        ),
+                        backgroundColor: Colors.deepPurpleAccent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 10,
                       ),
-                      elevation: 10,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -250,7 +253,8 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
-          borderSide: const BorderSide(color: Colors.deepPurpleAccent, width: 2),
+          borderSide:
+              const BorderSide(color: Colors.deepPurpleAccent, width: 2),
         ),
       ),
     );
@@ -284,12 +288,13 @@ class TeamSelectionScreenState extends State<TeamSelectionScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.deepPurpleAccent, width: 2),
+                borderSide:
+                    const BorderSide(color: Colors.deepPurpleAccent, width: 2),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      }).toList(),
     );
   }
 }
